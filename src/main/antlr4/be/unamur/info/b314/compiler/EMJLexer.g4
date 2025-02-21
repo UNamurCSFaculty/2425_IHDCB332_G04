@@ -10,14 +10,14 @@ LEFT_BRACKET : '[';
 RIGHT_BRACKET : ']';
 MINUS : '-';
 EQUAL : '=';
-
+COMMA : ',';
+WITH : 'with';
 
 // predefined emojis
 INT_TYPE : '\u{1F522}';
 BEGIN_COM : '\u{1F50A}';
 END_COM : '\u{1F508}';
 ONE_LINE_COM : '\u{1F4E2}';
-//'\u{}'
 
 // map emojis
 MAP : '\u{1F5FA}''\u{FE0F}';
