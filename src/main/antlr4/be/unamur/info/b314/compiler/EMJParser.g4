@@ -125,3 +125,121 @@ varDecl
 stringDecl
   : STRING_TYPE EMOJI_ID (EQUAL STRING_VALUE)?
   ;
+
+// int a = 1
+intDecl
+  : INT_TYPE EMOJI_ID (EQUAL INT_VALUE)?
+  ;
+
+// bool a = True
+boolDecl
+  : BOOL_TYPE EMOJI_ID (EQUAL BOOL_VALUE)?
+  ;
+
+// char a = a OU char a = 1
+charDecl
+  : CHAR_TYPE EMOJI_ID (EQUAL CHAR_VALUE)?
+  ;
+
+// (int, int)
+tupleDecl : TUPLE_TYPE EMOJI_ID (EQUAL (STRING_VALUE COMMA STRING_VALUE)
+  |(INT_VALUE COMMA INT_VALUE)
+  |(BOOL_VALUE COMMA BOOL_VALUE)
+  |(CHAR_VALUE COMMA CHAR_VALUE))?;
+
+// assignment : ex. [v] = 42;
+//   Obligatoire si le projet gère des affectations.
+assignment
+  : EMOJI_ID EQUAL expression
+  ;
+
+// functionCall : ex. [maFonction](arg1, arg2);
+//   Bonus si on gère les appels de fonctions.
+functionCall
+  : EMOJI_ID LEFT_PARENTHESIS argumentList? RIGHT_PARENTHESIS
+  ;
+
+argumentList
+  : expression (COMMA expression)*
+  ;
+
+// ifStatement : ex. 🤔( expression ) { ... } éventuellement 🙄 { ... }
+//   Bonus si le projet gère les conditions.
+ifStatement
+  : IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
+    (ELSE block)?
+  ;
+
+// loopStatement : ex. ♾️( expr ) { ... } ou 🔁(5) { ... }
+//   Bonus si le projet inclut des boucles.
+loopStatement
+  : WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
+  | FOR LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS block
+  ;
+
+// returnStatement : ex. ↩️ expression?
+//   Bonus si on a des fonctions qui renvoient quelque chose.
+returnStatement
+  : RETURN expression?
+  ;
+
+//------------------------------------------------------------------------------
+// 5) expression
+//   Gère la logique (ET/OU), les comparaisons, l’arithmétique, etc.
+//   Obligatoire si le langage manipule des calculs ou booléens.
+//------------------------------------------------------------------------------
+expression
+  : orExpression
+  ;
+
+// orExpression / andExpression : logique booléenne (||, &&) remplacée par des emojis.
+orExpression
+  : andExpression (OR andExpression)*
+  ;
+
+andExpression
+  : eqExpression (AND eqExpression)*
+  ;
+
+// eqExpression : ==, !=
+eqExpression
+  : compExpression ((EQUAL | NOTEQUAL) compExpression)*
+  ;
+
+// compExpression : <, >, <=, >=
+compExpression
+  : addExpression ((LESS | LEQ | GREATER | GEQ) addExpression)*
+  ;
+
+// addExpression : +, -
+addExpression
+  : mulExpression ((PLUS | MINUS) mulExpression)*
+  ;
+
+// mulExpression : *, /
+mulExpression
+  : unaryExpression ((MULTIPLY | DIVIDE) unaryExpression)*
+  ;
+
+// unaryExpression : un - ou un NOT_EMOJI avant le "primary"
+unaryExpression
+  : (MINUS | NOT)? primary
+  ;
+
+// primary : parties de base : valeur entière, identifiant, appel de fonction, parenthèses
+//   Bonus : on peut y ajouter string, char, bool, tuple littéral, etc. selon le besoin.
+primary
+  : INT_VALUE
+  | EMOJI_ID
+  | functionCall
+  | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  ;
+
+//------------------------------------------------------------------------------
+// 6) block
+//   Un bloc { ... } pour regrouper des statements (ex: dans main, dans if, etc.).
+//   Obligatoire si la syntaxe du projet l’exige pour structurer le code.
+//------------------------------------------------------------------------------
+block
+  : LEFT_BRACE statement* RIGHT_BRACE
+  ;
