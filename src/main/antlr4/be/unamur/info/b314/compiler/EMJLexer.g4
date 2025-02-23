@@ -12,7 +12,12 @@ LEFT_BRACKET : '[';
 RIGHT_BRACKET : ']';
 LEFT_PARENTHESIS : '(';
 RIGHT_PARENTHESIS : ')';
+LEFT_BRACE : '{';
+RIGHT_BRACE : '}';
+PLUS : '+';
 MINUS : '-';
+MULTIPLY : '*';
+DIVIDE: '/';
 EQUAL : '=';
 COMMA : ',';
 WITH : 'with';
@@ -45,6 +50,7 @@ STOP_THIEF : '\u{270B}'; //stop the thief
 SOUND_TOGGLE : '\u{1F4FB}'; //activate/desactivate Cutebot sound
 LIGHT_TOGGLE : '\u{1F6A8}'; //activate/desactivate lights of Cutebot
 VOID_TYPE : '\u{1F300}';
+RETURN : '\u{21A9}''\u{FE0F}';
 
 // map emojis
 MAP : '\u{1F5FA}''\u{FE0F}';
@@ -80,3 +86,8 @@ EMOJI_ID : LEFT_BRACKET EMOJIS RIGHT_BRACKET;
 
 // whitespaces
 WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESPACE in grammar
+
+// type declarations
+STRING_VALUE : '"'(~["\r\n])*'"';
+BOOL_VALUE : TRUE|FALSE;
+CHAR_VALUE : 'DIGIT|LETTER';
