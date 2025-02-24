@@ -20,7 +20,8 @@ root
 //   orientation correspond à un emoji (UP_ARROW, RIGHT_ARROW, etc.).
 //------------------------------------------------------------------------------
 mapFile
-  : WITH INT_VALUE COMMA INT_VALUE COMMA orientation mapRow+
+  :
+  MAP WITH INT_VALUE COMMA INT_VALUE COMMA orientation SEMICOLON mapCell+
   ;
 
 // orientation : défini l'emoji de direction initiale (nord, sud, est ou ouest).
@@ -29,12 +30,6 @@ orientation
   | RIGHT_ARROW
   | DOWN_ARROW
   | LEFT_ARROW
-  ;
-
-// mapRow : une ligne dans la carte.
-//   (mapCell)+ signifie qu’il y a au moins une cellule par ligne.
-mapRow
-  : mapCell+
   ;
 
 // mapCell : le contenu d'une case (police, route, obstacle, voleur).

@@ -1,7 +1,7 @@
 lexer grammar EMJLexer;
 
 PACKAGE : '\u{1F4E6}'; //same as import
-MAIN : '\u{1F3E0}'; //Main function of program
+MAIN : '\u{1F3E0}' -> mode(Program) ;//Main function of program
 // fragments
 fragment DIGIT : '0'..'9';
 fragment LETTER : ('a'..'z' | 'A'..'Z');
@@ -34,9 +34,6 @@ NOT : '\u{26D4}';
 
 // predefined emojis
 INT_TYPE : '\u{1F522}';
-BEGIN_COM : '\u{1F50A}'; //Begin multi-Lines comment
-END_COM : '\u{1F508}'; //end multi-lines comment
-ONE_LINE_COM : '\u{1F4E2}'; //1 line comment
 BOOL_TYPE : '\u{1F51F}';
 CHAR_TYPE : '\u{1F523}';
 STRING_TYPE : '\u{1F521}';
@@ -52,7 +49,13 @@ LIGHT_TOGGLE : '\u{1F6A8}'; //activate/desactivate lights of Cutebot
 VOID_TYPE : '\u{1F300}';
 RETURN : '\u{21A9}''\u{FE0F}';
 
-// map emojis
+
+
+// type values
+INT_VALUE : (MINUS)?(DIGIT)+;
+TRUE : '\u{2705}';
+FALSE : '\u{274C}';
+
 MAP : '\u{1F5FA}''\u{FE0F}';
 COP : '\u{1F694}';
 ROAD : '\u{1F6E3}''\u{FE0F}';
@@ -73,16 +76,7 @@ DOWN_ARROW : '\u{2B07}''\u{FE0F}';
 RIGHT_ARROW : '\u{27A1}''\u{FE0F}';
 LEFT_ARROW : '\u{2B05}''\u{FE0F}';
 
-// type values
-INT_VALUE : (MINUS)?(DIGIT)+;
-TRUE : '\u{2705}';
-FALSE : '\u{274C}';
 
-
-// emoji structure, allows sequencing of emoji's
-EMOJI : [\p{Emoji}]+;
-EMOJIS : EMOJI+;
-EMOJI_ID : LEFT_BRACKET EMOJIS RIGHT_BRACKET;
 
 // whitespaces
 WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESPACE in grammar
@@ -91,3 +85,20 @@ WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESP
 STRING_VALUE : '"'(~["\r\n])*'"';
 BOOL_VALUE : TRUE|FALSE;
 CHAR_VALUE : 'DIGIT|LETTER';
+
+//com skip
+BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 🔊
+ONE_LINE_COM : '\uD83D\uDCE2' ~[\r\n]* -> skip ; // 📢 followed by text to end of line
+
+// emoji structure, allows sequencing of emoji's
+mode Program;
+EMOJI : [\p{Emoji}]+;
+EMOJIS : EMOJI+;
+EMOJI_ID : LEFT_BRACKET EMOJIS RIGHT_BRACKET;
+
+// Multi-line comment mode
+mode multiLineCom;
+END_COM : '\uD83D\uDD08' -> popMode, skip ; // 🔈
+COMMENT_CONTENT : . -> skip ; // Skip everything in comment mode
+
+
