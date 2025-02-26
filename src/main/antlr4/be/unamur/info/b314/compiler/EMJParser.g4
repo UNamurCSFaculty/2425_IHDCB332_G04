@@ -7,9 +7,9 @@ options { tokenVocab = EMJLexer; }
 // 1) root
 //   Règle racine (point d'entrée).
 //   Obligatoire: Permet de distinguer si le fichier à parser est .map (mapFile) ou .moj (programFile).
-//   EOF : fin de fichier.
+//   EOF : fin de fichier (= End Of File).
 root
-  : (mapFile | programFile) EOF
+  : comment* (mapFile | programFile) comment* EOF
   ;
 
 //------------------------------------------------------------------------------
@@ -20,8 +20,7 @@ root
 //   orientation correspond à un emoji (UP_ARROW, RIGHT_ARROW, etc.).
 //------------------------------------------------------------------------------
 mapFile
-  :
-  MAP WITH INT_VALUE COMMA INT_VALUE COMMA orientation SEMICOLON mapCell+
+  : MAP WITH INT_VALUE COMMA INT_VALUE COMMA orientation SEMICOLON mapCell+
   ;
 
 // orientation : défini l'emoji de direction initiale (nord, sud, est ou ouest).
@@ -237,4 +236,16 @@ primary
 //------------------------------------------------------------------------------
 block
   : LEFT_BRACE statement* RIGHT_BRACE
+  ;
+
+//------------------------------------------------------------------------------
+// 7) comment
+//   Un commentaire peut avoir 2 formes :
+//      - uniligne -> (loudspeaker, U+1F4E2) au début de la ligne, texte après
+//      - multiligne -> (speaker-high-volume, U+1F50A) au début du commentaire
+//                      (speaker-low-volume,  U+1F508) à la fin du commentaire
+//------------------------------------------------------------------------------
+comment
+  : BEGIN_COM COMMENT_CONTENT* END_COM
+  | ONE_LINE_COM
   ;
