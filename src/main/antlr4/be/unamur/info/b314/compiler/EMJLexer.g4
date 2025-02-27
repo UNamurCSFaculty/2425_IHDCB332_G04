@@ -83,7 +83,7 @@ WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESP
 
 // type declarations
 STRING_VALUE : '"'(~["\r\n])*'"';
-BOOL_VALUE : TRUE|FALSE;
+//BOOL_VALUE : TRUE|FALSE //ca fonctionne pas le LEXER doit uniquement contenir des tokens, pas des groupes de token.
 CHAR_VALUE : 'DIGIT|LETTER';
 
 //com skip
@@ -95,7 +95,6 @@ mode Program;
 EMOJI : [\p{Emoji}]+;
 EMOJIS : EMOJI+;
 EMOJI_ID : LEFT_BRACKET EMOJIS RIGHT_BRACKET;
-
 // Multi-line comment mode
 mode multiLineCom;
 END_COM : '\uD83D\uDD08' -> popMode, skip ; // 🔈

@@ -150,7 +150,7 @@ assignment
 // functionCall : ex. [maFonction](arg1, arg2);
 //   Bonus si on gère les appels de fonctions.
 functionCall
-  : EMOJI_ID LEFT_PARENTHESIS argumentList? RIGHT_PARENTHESIS
+  : (EMOJI_ID | LIGHT_TOGGLE | SOUND_TOGGLE | STOP_THIEF) LEFT_PARENTHESIS argumentList? RIGHT_PARENTHESIS
   ;
 
 argumentList
@@ -224,6 +224,8 @@ unaryExpression
 //   Bonus : on peut y ajouter string, char, bool, tuple littéral, etc. selon le besoin.
 primary
   : INT_VALUE
+  | TRUE
+  | FALSE
   | EMOJI_ID
   | functionCall
   | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
