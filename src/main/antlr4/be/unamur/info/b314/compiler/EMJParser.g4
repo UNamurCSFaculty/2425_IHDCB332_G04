@@ -127,7 +127,7 @@ intDecl
 
 // bool a = True
 boolDecl
-  : BOOL_TYPE EMOJI_ID (EQUAL BOOL_VALUE)?
+  : BOOL_TYPE EMOJI_ID (EQUAL (TRUE | FALSE))?
   ;
 
 // char a = a OU char a = 1
@@ -138,7 +138,10 @@ charDecl
 // (int, int)
 tupleDecl : TUPLE_TYPE EMOJI_ID (EQUAL (STRING_VALUE COMMA STRING_VALUE)
   |(INT_VALUE COMMA INT_VALUE)
-  |(BOOL_VALUE COMMA BOOL_VALUE)
+  | (TRUE COMMA TRUE)
+  | (TRUE COMMA FALSE)
+  | (FALSE COMMA TRUE)
+  | (FALSE COMMA FALSE)
   |(CHAR_VALUE COMMA CHAR_VALUE))?;
 
 // assignment : ex. [v] = 42;
