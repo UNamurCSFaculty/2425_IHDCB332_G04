@@ -9,7 +9,7 @@ options { tokenVocab = EMJLexer; }
 //   Obligatoire: Permet de distinguer si le fichier à parser est .map (mapFile) ou .moj (programFile).
 //   EOF : fin de fichier (= End Of File).
 root
-  : comment* (mapFile | programFile) comment* EOF
+  : (mapFile | programFile) EOF
   ;
 
 //------------------------------------------------------------------------------
@@ -209,7 +209,10 @@ primaryExpression
   | CHAR_VALUE
   | TRUE
   | FALSE
+  | STRING_VALUE
+  | CHAR_VALUE
   | tupleValue
+  | EMOJI_ID
   | functionCall
   | leftExpression
   | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
@@ -228,16 +231,4 @@ tupleValue
 //------------------------------------------------------------------------------
 block
   : LEFT_BRACE statement* RIGHT_BRACE
-  ;
-
-//------------------------------------------------------------------------------
-// 7) comment
-//   Un commentaire peut avoir 2 formes :
-//      - uniligne -> (loudspeaker, U+1F4E2) au début de la ligne, texte après
-//      - multiligne -> (speaker-high-volume, U+1F50A) au début du commentaire
-//                      (speaker-low-volume,  U+1F508) à la fin du commentaire
-//------------------------------------------------------------------------------
-comment
-  : BEGIN_COM COMMENT_CONTENT* END_COM
-  | ONE_LINE_COM
   ;
