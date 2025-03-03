@@ -50,7 +50,9 @@ LIGHT_TOGGLE : '\u{1F6A8}'; //activate/desactivate lights of Cutebot
 VOID_TYPE : '\u{1F300}';
 RETURN : '\u{21A9}''\u{FE0F}';
 
-
+// tuple indexing
+TUPLE_FIRST : '\u{0030}''\u{FE0F}';  // 0️⃣ digit-zero (index 0)
+TUPLE_SECOND : '\u{0031}''\u{FE0F}'; // 1️⃣ digit-one (index 1)
 
 // type values
 INT_VALUE : (MINUS)?(DIGIT)+;
@@ -85,7 +87,7 @@ WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESP
 // type declarations
 STRING_VALUE : '"'(~["\r\n])*'"';
 //BOOL_VALUE : TRUE|FALSE //ca fonctionne pas le LEXER doit uniquement contenir des tokens, pas des groupes de token.
-CHAR_VALUE : 'DIGIT|LETTER|SPACE';
+CHAR_VALUE : '\'' (DIGIT | LETTER | SPACE) '\'';
 
 //com skip
 BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 🔊
