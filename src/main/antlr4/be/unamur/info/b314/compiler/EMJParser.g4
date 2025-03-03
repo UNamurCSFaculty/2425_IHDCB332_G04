@@ -67,6 +67,9 @@ type
   : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|TUPLE_TYPE|VOID_TYPE
   ;
 
+tupleType
+  : TUPLE_TYPE LEFT_PARENTHESIS (INT_TYPE | BOOL_TYPE | CHAR_TYPE | STRING_TYPE) RIGHT_PARENTHESIS
+  ;
 // mainFunction : la fonction principale.
 //   Souvent obligatoire dans un langage similaire à C/Java.
 //   Le type est forcément void
@@ -103,72 +106,55 @@ param
 statement
   : varDecl SEMICOLON         // Déclaration de variable
   | assignment SEMICOLON      // Affectation
-  | functionCall SEMICOLON    // Appel de fonction "inutile" (pas de retour stocké)
+  | functionCallStmt SEMICOLON
+  | predefinedStmt SEMICOLON
   | ifStatement               // Conditionnelle if/else
   | loopStatement             // Boucles
   | returnStatement SEMICOLON // Retour de fonction
   ;
 
-// varDecl : Déclaration d’une variable, par ex. 🔢 [v] = 10;
-//   Obligatoire si on veut gérer des variables.
+predefinedStmt
+  : STOP_THIEF LEFT_PARENTHESIS RIGHT_PARENTHESIS
+  | SOUND_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS
+  | LIGHT_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS
+  | UP_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  | DOWN_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  | RIGHT_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  | LEFT_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  ;
+
 varDecl
-  : intDecl|stringDecl|boolDecl|charDecl|tupleDecl
+  : type EMOJI_ID (EQUAL expression)?
   ;
 
-// String a = "aaaaaa"
-stringDecl
-  : STRING_TYPE EMOJI_ID (EQUAL STRING_VALUE)?
-  ;
-
-// int a = 1
-intDecl
-  : INT_TYPE EMOJI_ID (EQUAL INT_VALUE)?
-  ;
-
-// bool a = True
-boolDecl
-  : BOOL_TYPE EMOJI_ID (EQUAL (TRUE | FALSE))?
-  ;
-
-// char a = a OU char a = 1
-charDecl
-  : CHAR_TYPE EMOJI_ID (EQUAL CHAR_VALUE)?
-  ;
-
-// (int, int)
-tupleDecl : TUPLE_TYPE EMOJI_ID (EQUAL (STRING_VALUE COMMA STRING_VALUE)
-  |(INT_VALUE COMMA INT_VALUE)
-  | (TRUE COMMA TRUE)
-  | (TRUE COMMA FALSE)
-  | (FALSE COMMA TRUE)
-  | (FALSE COMMA FALSE)
-  |(CHAR_VALUE COMMA CHAR_VALUE))?;
-
-// assignment : ex. [v] = 42;
-//   Obligatoire si le projet gère des affectations.
 assignment
   : EMOJI_ID EQUAL expression
   ;
 
-// functionCall : ex. [maFonction](arg1, arg2);
-//   Bonus si on gère les appels de fonctions.
+leftExpression
+  : EMOJI_ID
+  | EMOJI_ID TUPLE_FIRST
+  | EMOJI_ID TUPLE_SECOND
+  ;
+
+functionCallStmt
+  : functionCall
+  ;
+
 functionCall
-  : (EMOJI_ID | LIGHT_TOGGLE | SOUND_TOGGLE | STOP_THIEF) LEFT_PARENTHESIS argumentList? RIGHT_PARENTHESIS
+  : EMOJI_ID LEFT_PARENTHESIS argumentList? RIGHT_PARENTHESIS
   ;
 
 argumentList
   : expression (COMMA expression)*
   ;
 
-// ifStatement : ex. 🤔( expression ) { ... } éventuellement 🙄 { ... }
-//   Bonus si le projet gère les conditions.
+
 ifStatement
   : IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
     (ELSE block)?
   ;
 
-// loopStatement : ex. ♾️( expr ) { ... } ou 🔁(5) { ... }
-//   Bonus si le projet inclut des boucles.
 loopStatement
   : WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
   | FOR LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS block
@@ -189,50 +175,51 @@ expression
   : orExpression
   ;
 
-// orExpression / andExpression : logique booléenne (||, &&) remplacée par des emojis.
 orExpression
   : andExpression (OR andExpression)*
   ;
 
 andExpression
-  : eqExpression (AND eqExpression)*
+  : notExpression (AND notExpression)*
   ;
 
-// eqExpression : ==, !=
-eqExpression
-  : compExpression ((EQUAL | NOTEQUAL) compExpression)*
+notExpression
+  : NOT? comparisonExpression
   ;
 
-// compExpression : <, >, <=, >=
-compExpression
-  : addExpression ((LESS | LEQ | GREATER | GEQ) addExpression)*
+comparisonExpression
+  : additiveExpression ((DOUBLE_EQUAL | NOTEQUAL | LESS | LEQ | GREATER | GEQ) additiveExpression)?
   ;
 
-// addExpression : +, -
-addExpression
-  : mulExpression ((PLUS | MINUS) mulExpression)*
+additiveExpression
+  : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
   ;
 
-// mulExpression : *, /
-mulExpression
+multiplicativeExpression
   : unaryExpression ((MULTIPLY | DIVIDE) unaryExpression)*
   ;
 
-// unaryExpression : un - ou un NOT_EMOJI avant le "primary"
 unaryExpression
-  : (MINUS | NOT)? primary
+  : (MINUS)? primaryExpression
   ;
 
-// primary : parties de base : valeur entière, identifiant, appel de fonction, parenthèses
-//   Bonus : on peut y ajouter string, char, bool, tuple littéral, etc. selon le besoin.
-primary
+primaryExpression
   : INT_VALUE
+  | STRING_VALUE
+  | CHAR_VALUE
   | TRUE
   | FALSE
-  | EMOJI_ID
+  | tupleValue
   | functionCall
+  | leftExpression
   | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
   ;
+
+// Ajout de tupleValue pour gérer les tuples
+tupleValue
+  : LEFT_PARENTHESIS expression COMMA expression RIGHT_PARENTHESIS
+  ;
+
 
 //------------------------------------------------------------------------------
 // 6) block
