@@ -5,6 +5,7 @@ MAIN : '\u{1F3E0}' -> mode(Program) ;//Main function of program
 // fragments
 fragment DIGIT : '0'..'9';
 fragment LETTER : ('a'..'z' | 'A'..'Z');
+fragment SPACE : ' ';
 
 // characters
 SEMICOLON : ';';
@@ -84,7 +85,7 @@ WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESP
 // type declarations
 STRING_VALUE : '"'(~["\r\n])*'"';
 //BOOL_VALUE : TRUE|FALSE //ca fonctionne pas le LEXER doit uniquement contenir des tokens, pas des groupes de token.
-CHAR_VALUE : 'DIGIT|LETTER';
+CHAR_VALUE : 'DIGIT|LETTER|SPACE';
 
 //com skip
 BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 🔊
