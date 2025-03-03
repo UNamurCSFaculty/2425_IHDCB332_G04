@@ -20,6 +20,7 @@ MINUS : '-';
 MULTIPLY : '*';
 DIVIDE: '/';
 EQUAL : '=';
+DOUBLE_EQUAL : '==';
 COMMA : ',';
 WITH : 'with';
 LESS : '<';
