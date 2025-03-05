@@ -1,0 +1,9 @@
+📦 "test_map.map"
+
+📢 This program is missing the main function
+📢 It should be rejected by the grammar
+
+🔢 [🚂](🔢 [🔢]){
+    🔢 [🚆] = [🔢] * 2;
+    ↩️ [🚆];
+}

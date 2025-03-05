@@ -1,0 +1,11 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing string declarations
+    🔡 [📜] = "Hello World";
+    🔡 [📃] = "123 ABC";
+    🔡 [📄] = "";  📢 Empty string
+    🔡 [📑] = "aB1 cD2";
+
+    🌀;
+}

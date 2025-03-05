@@ -1,0 +1,13 @@
+📦 "test_map.map"
+
+🔊
+This is a multi-line comment that attempts to nest another comment
+🔊 This nested comment should cause an error 🔈
+Because nested comments are not allowed
+🔈
+
+🌀 🏠(){
+    🔢 [🚗] = 10;
+    ✋();
+    🌀;
+}

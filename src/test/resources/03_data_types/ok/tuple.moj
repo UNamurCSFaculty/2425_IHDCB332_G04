@@ -1,0 +1,19 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing 2-tuple declarations and operations
+    👥(🔢) [🎲] = (42, 17);
+    👥(🔣) [🎮] = ('a', 'Z');
+    👥(🔡) [🎯] = ("hello", "world");
+    👥(🔟) [🎪] = (✅, ❌);
+
+    📢 Accessing tuple elements
+    🔢 [🎪] = [🎲]0️⃣;
+    🔢 [🎯] = [🎲]1️⃣;
+
+    📢 Assigning to tuple elements
+    [🎲]0️⃣ = 100;
+    [🎲]1️⃣ = 200;
+
+    🌀;
+}

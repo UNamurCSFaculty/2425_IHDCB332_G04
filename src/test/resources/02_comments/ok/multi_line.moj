@@ -1,0 +1,17 @@
+📦 "test_map.map"
+
+🔊
+This is a multi-line comment at the program level
+It should span multiple lines
+And be recognized correctly by the grammar
+🔈
+
+🌀 🏠(){
+    🔊
+    This is a multi-line comment inside main function
+    It should also be recognized correctly
+    🔈
+    🔢 [🚗] = 10;
+    ✋();
+    🌀;
+}

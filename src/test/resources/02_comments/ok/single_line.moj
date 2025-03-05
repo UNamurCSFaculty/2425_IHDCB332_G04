@@ -1,0 +1,9 @@
+📦 "test_map.map"
+📢 This is a single line comment at the program level
+
+🌀 🏠(){
+    📢 This is a comment inside main function
+    🔢 [🚗] = 10; 📢 This is a comment after an instruction
+    ✋();
+    🌀;
+}

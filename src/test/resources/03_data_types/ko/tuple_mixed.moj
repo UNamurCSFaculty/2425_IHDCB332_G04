@@ -1,0 +1,8 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 This should fail because tuples must contain same type elements
+    👥(🔢) [🎲] = (42, "hello");
+
+    🌀;
+}
