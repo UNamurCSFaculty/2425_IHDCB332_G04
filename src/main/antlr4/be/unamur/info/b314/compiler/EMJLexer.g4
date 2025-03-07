@@ -1,7 +1,8 @@
 lexer grammar EMJLexer;
 
 PACKAGE : '\u{1F4E6}'; // package/import
-MAIN : '\u{1F3E0}' -> mode(Program) ;// Main function
+MAIN : '\u{1F3E0}'; // Main function
+
 // fragments
 fragment DIGIT : '0'..'9';
 fragment LETTER : ('a'..'z' | 'A'..'Z');
@@ -33,7 +34,6 @@ NOTEQUAL : '!=';
 AND : '\u{1F91D}';
 OR : '\u{2753}';
 NOT : '\u{26D4}';
-
 
 // types
 INT_TYPE : '\u{1F522}';
@@ -68,7 +68,6 @@ MAP : '\u{1F5FA}''\u{FE0F}';
 COP : '\u{1F694}';
 ROAD : '\u{1F6E3}''\u{FE0F}';
 
-
 OBSTACLE :
     '\u{1F30B}'          // volcano
   | '\u{1F3D8}''\u{FE0F}'// houses
@@ -84,8 +83,6 @@ DOWN_ARROW : '\u{2B07}''\u{FE0F}';
 RIGHT_ARROW : '\u{27A1}''\u{FE0F}';
 LEFT_ARROW : '\u{2B05}''\u{FE0F}';
 
-
-
 // whitespaces
 WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESPACE in grammar
 
@@ -94,18 +91,15 @@ STRING_VALUE : '"'(~["\r\n])*'"';
 CHAR_VALUE : '\'' (DIGIT | LETTER | SPACE) '\'';
 
 //com skip
-BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 🔊
-ONE_LINE_COM : '\uD83D\uDCE2' ~[\r\n]* -> skip ; // 📢 followed by text to end of line
+BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 
+ONE_LINE_COM : '\uD83D\uDCE2' ~[\r\n]* -> skip ; //  followed by text to end of line
 
-// emoji structure, allows sequencing of emoji's
-mode Program;
-EMOJI : [\p{Emoji}]+;
+// Définition améliorée des emojis
+EMOJI : [\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Component}\p{Emoji_Modifier_Base}];
 EMOJIS : EMOJI+;
-EMOJI_ID : LEFT_BRACKET EMOJIS RIGHT_BRACKET;
+EMOJI_ID : LEFT_BRACKET EMOJI RIGHT_BRACKET;
 
 // Multi-line comment mode
 mode multiLineCom;
-END_COM : '\uD83D\uDD08' -> popMode, skip ; // 🔈
+END_COM : '\uD83D\uDD08' -> popMode, skip ; // 
 COMMENT_CONTENT : . -> skip ; // Skip everything in comment mode
-
-
