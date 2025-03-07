@@ -64,24 +64,31 @@ importStatement
 // Enumeration des différents types possibles
 // Correspond à n'importe quel type
 type
-  : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|TUPLE_TYPE|VOID_TYPE
+  : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|TUPLE_TYPE
+  ;
+
+// Type de retour qui peut être un type normal ou VOID
+returnType
+  : type
+  | VOID_TYPE
   ;
 
 tupleType
   : TUPLE_TYPE LEFT_PARENTHESIS (INT_TYPE | BOOL_TYPE | CHAR_TYPE | STRING_TYPE) RIGHT_PARENTHESIS
   ;
+
 // mainFunction : la fonction principale.
 //   Souvent obligatoire dans un langage similaire à C/Java.
 //   Le type est forcément void
 //   Elle est représentée par l'emoji MAIN (🏠) + bloc.
 mainFunction
-  : VOID_TYPE MAIN block
+  : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACE statement* (VOID_TYPE SEMICOLON)? RIGHT_BRACE
   ;
 
 // functionDecl : déclaration de fonctions supplémentaires (bonus).
-//   type ou INT_TYPE, un identifiant emoji, paramList optionnelle, un bloc.
+//   type ou VOID_TYPE, un identifiant emoji, paramList optionnelle, un bloc.
 functionDecl
-  : type EMOJI_ID optionalParamList block
+  : returnType EMOJI_ID optionalParamList LEFT_BRACE statement* (returnStatement SEMICOLON)? RIGHT_BRACE
   ;
 
 optionalParamList
@@ -101,7 +108,7 @@ param
 //------------------------------------------------------------------------------
 // 4) statement
 //   Liste des instructions possibles dans le .moj.
-//   Plusieurs sont "obligatoires" si le projet l’exige, d'autres "bonus" si non imposées.
+//   Plusieurs sont "obligatoires" si le projet l'exige, d'autres "bonus" si non imposées.
 //------------------------------------------------------------------------------
 statement
   : varDecl SEMICOLON         // Déclaration de variable
@@ -163,11 +170,12 @@ loopStatement
 //   Bonus si on a des fonctions qui renvoient quelque chose.
 returnStatement
   : RETURN expression?
+  | VOID_TYPE
   ;
 
 //------------------------------------------------------------------------------
 // 5) expression
-//   Gère la logique (ET/OU), les comparaisons, l’arithmétique, etc.
+//   Gère la logique (ET/OU), les comparaisons, l'arithmétique, etc.
 //   Obligatoire si le langage manipule des calculs ou booléens.
 //------------------------------------------------------------------------------
 expression
@@ -208,8 +216,6 @@ primaryExpression
   | CHAR_VALUE
   | TRUE
   | FALSE
-  | STRING_VALUE
-  | CHAR_VALUE
   | tupleValue
   | EMOJI_ID
   | functionCall
@@ -226,7 +232,7 @@ tupleValue
 //------------------------------------------------------------------------------
 // 6) block
 //   Un bloc { ... } pour regrouper des statements (ex: dans main, dans if, etc.).
-//   Obligatoire si la syntaxe du projet l’exige pour structurer le code.
+//   Obligatoire si la syntaxe du projet l'exige pour structurer le code.
 //------------------------------------------------------------------------------
 block
   : LEFT_BRACE statement* RIGHT_BRACE
