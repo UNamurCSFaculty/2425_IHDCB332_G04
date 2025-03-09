@@ -135,14 +135,16 @@ varDecl
   ;
 
 assignment
-  : EMOJI_ID EQUAL expression
+  : leftExpression EQUAL expression
   ;
 
+
 leftExpression
-  : EMOJI_ID
-  | EMOJI_ID TUPLE_FIRST
+  : EMOJI_ID TUPLE_FIRST
   | EMOJI_ID TUPLE_SECOND
+  | EMOJI_ID
   ;
+
 
 functionCallStmt
   : functionCall
