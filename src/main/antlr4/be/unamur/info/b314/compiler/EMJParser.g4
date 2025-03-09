@@ -165,8 +165,9 @@ ifStatement
 
 loopStatement
   : WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
-  | FOR LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS block
+  | FOR LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block  // 🔥 Changement ici !
   ;
+
 
 // returnStatement : ex. ↩️ expression?
 //   Bonus si on a des fonctions qui renvoient quelque chose.
