@@ -1,0 +1,44 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing return statements (main function must return void)
+    🔢 [🎗️] = [🎖️](5);
+    🔡 [🏅] = [🏆]("hello");
+    🔟 [🏳️] = [🏁](10, 20);
+
+    [🚩]();
+
+    🌀;  📢 Void return in main
+}
+
+🔢 [🎖️](🔢 [🏅]){
+    📢 Return integer
+    ↩️ [🏅] * 2;
+}
+
+🔡 [🏆](🔡 [🏆]){
+    📢 Return string
+    ↩️ [🏆];
+}
+
+🔟 [🏁](🔢 [🏁], 🔢 [🏳️]){
+    📢 Return boolean with condition
+    🤔 ([🏁] < [🏳️]){
+        ↩️ ✅;
+    }
+    🤨{
+        ↩️ ❌;
+    }
+}
+
+🌀 [🚩](){
+    📢 Void function
+    🔢 [🏁] = 10;
+
+    🤔 ([🏁] > 5){
+        🌀;  📢 Early void return
+    }
+
+    [🏁] = 20;
+    🌀;  📢 Normal void return
+}

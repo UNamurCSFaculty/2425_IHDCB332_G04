@@ -1,0 +1,44 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing function calls with parameters
+
+    📢 Function call without parameters
+    [🎯]();
+
+    📢 Function call with simple parameters
+    🔢 [🎮] = [🎲](5);
+    🔡 [🎰] = [🎮](10, "test");
+
+    📢 Function call with expressions as parameters
+    🔢 [🎯] = [🎲](5 + 10);
+    🔢 [🎲] = [🎲]([🎮] * 2);
+
+    📢 Function call with function calls as parameters
+    🔢 [🎮] = [🎲]([🎲](3));
+
+    📢 Function calls as statements
+    [🎯]();
+    [🎮](10, "hello");
+
+    📢 Nested function calls in expressions
+    🔢 [🎰] = [🎲](5) + [🎲](10);
+    🔟 [🎯] = [🎮](7, "test") == "hello";
+
+    🌀;
+}
+
+🌀 [🎯](){
+    📢 Simple function without parameters
+    🌀;
+}
+
+🔢 [🎲](🔢 [🎲]){
+    📢 Function that returns an integer
+    ↩️ [🎲] * 2;
+}
+
+🔡 [🎮](🔢 [🎮], 🔡 [🎰]){
+    📢 Function that returns a string
+    ↩️ [🎰];
+}

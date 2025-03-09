@@ -1,0 +1,21 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing arithmetic expressions
+    🔢 [🧮] = 5 + 3;
+    🔢 [📏] = 10 - 7;
+    🔢 [📐] = 4 * 6;
+    🔢 [📊] = 20 / 5;
+
+    📢 Complex expressions with parentheses
+    🔢 [📈] = (5 + 3) * 2;
+    🔢 [📉] = 10 - (3 * 2);
+    🔢 [📋] = (8 + 4) / (6 - 2);
+
+    📢 Using variables in expressions
+    🔢 [📌] = [🧮] + [📏];
+    🔢 [📎] = ([📐] * 2) - [📊];
+    🔢 [📏] = -[📏];  📢 Unary minus
+
+    🌀;
+}

@@ -1,0 +1,22 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing various emoji identifiers for variables
+    🔢 [🚗] = 1;
+    🔢 [🚙] = 2;
+    🔢 [🏎️] = 3;
+    🔢 [🚀] = 4;
+
+    📢 Multiple emojis in identifiers
+    🔢 [🚗🚙] = 5;
+    🔢 [🏎️🚀] = 6;
+    🔢 [👨‍👩‍👧‍👦] = 7;  📢 Complex emoji with zero-width joiner
+    🔢 [👍👎] = 8;
+
+    📢 Emojis with skin tones and variation selectors
+    🔢 [👋🏻] = 9;
+    🔢 [👋🏿] = 10;
+    🔢 [☂️] = 11;  📢 With variation selector
+
+    🌀;
+}

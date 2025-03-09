@@ -1,0 +1,26 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing complex nested expressions
+    🔢 [🎨] = 10;
+    🔢 [🖌️] = 20;
+
+    📢 Arithmetic with function calls
+    🔢 [🎭] = [🎪]([🎨]) + [🎪]([🖌️]);
+
+    📢 Boolean expression with arithmetic subexpressions
+    🔟 [🎪] = ([🎨] * 2 + 5) > ([🖌️] - 10);
+
+    📢 Complex nested expression
+    🔟 [🏆] = (([🎭] / 2) == [🎨]) 🤝 ((([🖌️] * 2) > 30) ❓ ⛔(5 <= [🎨]));
+
+    🤔 ([🏆]){
+        🔢 [🏅] = (([🎨] + [🖌️]) * 2) / (([🎭] - [🎨]) + 1);
+    }
+
+    🌀;
+}
+
+🔢 [🎪](🔢 [🌈]){
+    ↩️ [🌈] * [🌈];
+}

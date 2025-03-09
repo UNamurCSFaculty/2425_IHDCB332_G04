@@ -1,0 +1,42 @@
+🌀 🏠(){
+    📢 Testing conditional structures
+    🔢 [🎲] = 10;
+
+    📢 Simple if statement
+    🤔 ([🎲] > 5){
+        [🎲] = [🎲] * 2;
+    }
+
+    📢 If-else statement
+    🤔 ([🎲] < 15){
+        [🎲] = [🎲] + 5;
+    }
+    🤨{
+        [🎲] = [🎲] - 5;
+    }
+
+    📢 If with else-skip
+    🤔 ([🎲] == 20){
+        [🎲] = 0;
+    }
+    🤨{
+        👇;
+    }
+
+    📢 Nested if statements
+    🤔 ([🎲] >= 10){
+        🤔 ([🎲] <= 20){
+            [🎲] = 15;
+        }
+        🤨{
+            [🎲] = 25;
+        }
+    }
+
+    📢 Complex condition
+    🤔 (([🎲] > 10) 🤝 ([🎲] < 20)){
+        [🎲] = 30;
+    }
+
+    🌀;
+}

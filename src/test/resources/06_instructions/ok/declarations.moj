@@ -1,0 +1,25 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing variable declarations
+
+    📢 Declarations without initialization
+    🔢 [🍎];
+    🔣 [🍌];
+    🔡 [🍇];
+    🔟 [🍊];
+    👥(🔢) [🍓];
+
+    📢 Declarations with initialization
+    🔢 [🍉] = 42;
+    🔣 [🍋] = 'A';
+    🔡 [🍒] = "Hello";
+    🔟 [🍑] = ✅;
+    👥(🔡) [🥭] = ("apple", "banana");
+
+    📢 Declarations with complex expressions
+    🔢 [🍍] = 5 * (10 + 2);
+    🔟 [🥝] = (5 < 10) 🤝 (7 > 3);
+
+    🌀;
+}

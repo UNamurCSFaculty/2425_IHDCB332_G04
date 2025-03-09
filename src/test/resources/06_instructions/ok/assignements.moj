@@ -1,0 +1,31 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing variable assignments
+
+    📢 Initialize variables
+    🔢 [🍮] = 10;
+    🔡 [🍰] = "hello";
+    👥(🔢) [🧁] = (1, 2);
+
+    📢 Simple assignments
+    [🍮] = 20;
+    [🍰] = "world";
+
+    📢 Assignments with expressions
+    [🍮] = [🍮] + 5;
+    [🍮] = [🍮] * 2;
+
+    📢 Tuple element assignments
+    [🧁]0️⃣ = 100;
+    [🧁]1️⃣ = 200;
+
+    📢 Assignments with function calls
+    [🍮] = [🍭]([🍮]);
+
+    🌀;
+}
+
+🔢 [🍭](🔢 [🍬]){
+    ↩️ [🍬] * 2;
+}
