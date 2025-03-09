@@ -64,7 +64,7 @@ importStatement
 // Enumeration des différents types possibles
 // Correspond à n'importe quel type
 type
-  : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|TUPLE_TYPE
+  : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|tupleType
   ;
 
 // Type de retour qui peut être un type normal ou VOID
