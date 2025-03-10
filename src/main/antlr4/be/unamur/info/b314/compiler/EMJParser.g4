@@ -174,7 +174,7 @@ loopStatement
 returnStatement
   : RETURN expression?
   | VOID_TYPE
-  | RETURN VOID_TYPE
+  | RETURN_VOID
   ;
 
 //------------------------------------------------------------------------------

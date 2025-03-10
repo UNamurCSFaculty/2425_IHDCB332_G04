@@ -53,7 +53,7 @@ STOP_THIEF : '\u{270B}'; //stop the thief
 SOUND_TOGGLE : '\u{1F4FB}'; //activate/desactivate Cutebot sound
 LIGHT_TOGGLE : '\u{1F6A8}'; //activate/desactivate lights of Cutebot
 RETURN : '\u{21A9}''\u{FE0F}';
-
+RETURN_VOID : '\u{21A9}''\u{FE0F}''\u{1F300}';
 // tuple indexing
 TUPLE_FIRST : '\u{0030}''\u{FE0F}';  // 0️⃣ digit-zero (index 0)
 TUPLE_SECOND : '\u{0031}''\u{FE0F}'; // 1️⃣ digit-one (index 1)
