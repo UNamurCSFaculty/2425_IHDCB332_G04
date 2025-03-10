@@ -128,7 +128,6 @@ predefinedStmt
   | DOWN_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
   | RIGHT_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
   | LEFT_ARROW LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
-  | SKIPPING
   ;
 
 varDecl
@@ -161,7 +160,7 @@ argumentList
 
 ifStatement
   : IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
-    (ELSE block)?
+    (ELSE block | ELSE LEFT_BRACE SKIPPING SEMICOLON RIGHT_BRACE)?
   ;
 
 loopStatement
