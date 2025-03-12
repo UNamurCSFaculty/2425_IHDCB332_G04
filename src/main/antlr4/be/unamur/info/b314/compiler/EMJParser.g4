@@ -88,8 +88,9 @@ mainFunction
 // functionDecl : déclaration de fonctions supplémentaires (bonus).
 //   type ou VOID_TYPE, un identifiant emoji, paramList optionnelle, un bloc.
 functionDecl
-  : returnType EMOJI_ID optionalParamList LEFT_BRACE statement* (returnStatement SEMICOLON)? RIGHT_BRACE
+  : returnType EMOJI_ID optionalParamList LEFT_BRACE statement* returnStatement SEMICOLON RIGHT_BRACE
   ;
+
 
 optionalParamList
   : LEFT_PARENTHESIS paramList? RIGHT_PARENTHESIS
@@ -172,10 +173,11 @@ loopStatement
 // returnStatement : ex. ↩️ expression?
 //   Bonus si on a des fonctions qui renvoient quelque chose.
 returnStatement
-  : RETURN expression?
-  | VOID_TYPE
-  | RETURN_VOID
+  : RETURN expression
+  | RETURN VOID_TYPE
+  | RETURN RETURN_VOID
   ;
+
 
 //------------------------------------------------------------------------------
 // 5) expression
