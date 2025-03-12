@@ -170,10 +170,9 @@ loopStatement
   ;
 
 
-// returnStatement : ex. ↩️ expression?
-//   Bonus si on a des fonctions qui renvoient quelque chose.
 returnStatement
   : RETURN expression?
+  | RETURN VOID_TYPE
   | VOID_TYPE
   | RETURN_VOID
   ;
