@@ -1,0 +1,18 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Invalid function calls
+    🔢 [🎮] = [🎲](5);
+    🔡 [🎰] = [🎮](10, "test");
+
+    🌀;
+}
+
+🔢 [🎲](🔢 [🎲]){
+    📢 Function with a commented return
+    📢 ↩️ [🎲] * 2;
+}
+
+🔡 [🎮](🔢 [🎮], 🔡 [🎰]){
+    📢 Function without a return
+}
