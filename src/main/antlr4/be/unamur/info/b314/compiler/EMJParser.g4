@@ -224,6 +224,7 @@ primaryExpression
   | CHAR_VALUE
   | TRUE
   | FALSE
+  | NOT primaryExpression
   | tupleValue
   | EMOJI_ID
   | functionCall
