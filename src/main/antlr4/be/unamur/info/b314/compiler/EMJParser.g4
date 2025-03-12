@@ -82,7 +82,7 @@ tupleType
 //   Le type est forcément void
 //   Elle est représentée par l'emoji MAIN (🏠) + bloc.
 mainFunction
-  : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACE statement* (VOID_TYPE SEMICOLON)? RIGHT_BRACE
+  : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACE statement+ (VOID_TYPE SEMICOLON)? RIGHT_BRACE
   ;
 
 // functionDecl : déclaration de fonctions supplémentaires (bonus).
