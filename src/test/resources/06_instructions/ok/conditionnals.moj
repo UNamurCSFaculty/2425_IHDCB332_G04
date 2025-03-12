@@ -45,7 +45,7 @@
         [👾] = ❌
     }
 
-    📢 Boolean condition
+    📢 Boolean condition - other direction
     🤔 (✅ != [👾]){
         [🎲] = 15
         [👾] = ✅
