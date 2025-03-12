@@ -174,8 +174,8 @@ loopStatement
 //   Bonus si on a des fonctions qui renvoient quelque chose.
 returnStatement
   : RETURN expression?
-  | RETURN VOID_TYPE
-  | RETURN RETURN_VOID
+  | VOID_TYPE
+  | RETURN_VOID
   ;
 
 
