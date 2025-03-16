@@ -51,10 +51,16 @@ public class EMJJenkinsTests {
     @Test
     public void comments_ko_comment_block_not_closed() throws Exception {
         CompilerTestHelper.launchCompilation(
-                "/06_instructions/ko/unclosed_comment.moj",
+                "/06_instructions/ko/unclosed_comment_inside_main.moj",
                 testFolder.newFile(),
                 false,
-                "Comments: Unclosed block comment should fail"
+                "Comments: Unclosed block comment inside main function should fail"
+        );
+        CompilerTestHelper.launchCompilation(
+                "/06_instructions/ko/unclosed_comment_before_main.moj",
+                testFolder.newFile(),
+                false,
+                "Comments: Unclosed block comment outside main function should fail"
         );
     }
 
