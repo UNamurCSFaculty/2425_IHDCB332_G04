@@ -50,7 +50,7 @@ mapCell
 //------------------------------------------------------------------------------
 programFile
   : importStatement?        // Bonus ou obligatoire (selon consignes du projet)
-    mainFunction?           // Souvent obligatoire, si le cahier des charges exige "main"
+    mainFunction           // Souvent obligatoire, si le cahier des charges exige "main"
     functionDecl*           // Bonus: fonctions additionnelles
     statement*              // Différentes instructions
   ;
