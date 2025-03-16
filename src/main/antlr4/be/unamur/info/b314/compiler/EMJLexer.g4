@@ -107,5 +107,5 @@ COMMENT_CONTENT : . -> skip ; // Skip everything in comment mode
 
 // This rule is used to catch if we reach the EOF while still in multi-line comment mode
 EOF_IN_COMMENT : EOF {
-    throw new be.unamur.info.b314.compiler.exception.SymbolNotFoundException("Unterminated block comment detected!");
+    throw new IllegalStateException("Unterminated block comment detected!");
 };
