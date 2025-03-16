@@ -1,0 +1,20 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Test program for inline function with explicit return
+    🔢 [🚗] = 5;
+    ⬆️(1);
+    [🧪]();
+    
+    📢 Return statement inside main
+    ↩️ 🔁;
+}
+
+📢 Function with void return type
+🌀 [🧪](){
+    📢 This function demonstrates explicit void return
+    🔢 [🚀] = 20;
+    
+    📢 Return statement with RETURN_VOID
+    ↩️ 🔁;
+}
