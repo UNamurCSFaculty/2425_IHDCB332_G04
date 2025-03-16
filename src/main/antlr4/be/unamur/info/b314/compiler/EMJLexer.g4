@@ -91,21 +91,16 @@ WHITESPACE: (' ' | '\t' | ('\r')? '\n' | '\r')+ -> skip; // Skip ignores WHITESP
 STRING_VALUE : '"'(~["\r\n])*'"';
 CHAR_VALUE : '\'' (DIGIT | LETTER | SPACE) '\'';
 
+//com skip
+BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; // 
+ONE_LINE_COM : '\uD83D\uDCE2' ~[\r\n]* -> skip ; //  followed by text to end of line
+
 // Définition améliorée des emojis
 EMOJI: [\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Component}\p{Emoji_Modifier_Base}\p{Extended_Pictographic}\p{InMiscellaneous_Symbols}\p{InMiscellaneous_Symbols_And_Pictographs}\p{InSupplemental_Symbols_And_Pictographs}\p{InEmoticons}\p{InTransport_And_Map_Symbols}\p{InDingbats}\p{InEnclosed_Alphanumerics}\p{InEnclosed_Alphanumeric_Supplement}\p{InEnclosed_CJK_Letters_And_Months}\p{InEnclosed_Ideographic_Supplement}\p{InVariation_Selectors}\p{InVariation_Selectors_Supplement}\u200D\p{Regional_Indicator}\u{E0000}..\u{E007F}];
 //EMOJIS : EMOJI+; //Normalement doit pouvoir être enlevé : Ayhan
 EMOJI_ID : LEFT_BRACKET (EMOJI EMOJI*) RIGHT_BRACKET;
 
-//com skip
-BEGIN_COM : '\uD83D\uDD0A' -> pushMode(multiLineCom), skip ; //
-ONE_LINE_COM : '\uD83D\uDCE2' ~[\r\n]* -> skip ; //  followed by text to end of line
-
 // Multi-line comment mode
 mode multiLineCom;
 END_COM : '\uD83D\uDD08' -> popMode, skip ; // 
 COMMENT_CONTENT : . -> skip ; // Skip everything in comment mode
-
-// This rule is used to catch if we reach the EOF while still in multi-line comment mode
-EOF_IN_COMMENT : EOF {
-    throw new IllegalStateException("Unterminated block comment detected!");
-};
