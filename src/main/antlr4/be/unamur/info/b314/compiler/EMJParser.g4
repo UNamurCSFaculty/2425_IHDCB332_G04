@@ -1,134 +1,125 @@
 parser grammar EMJParser;
 
-// Indique que ce parser utilise les tokens définis dans EMJLexer.g4
+//Parser uses tokens defined in EMJLexer.g4
 options { tokenVocab = EMJLexer; }
 
-//------------------------------------------------------------------------------
-// 1) root
-//   Règle racine (point d'entrée).
-//   Obligatoire: Permet de distinguer si le fichier à parser est .map (mapFile) ou .moj (programFile).
-//   EOF : fin de fichier (= End Of File).
+//   Main entry point to distinguish between .map and .moj files
 root
   : (mapFile | programFile) EOF
   ;
 
-//------------------------------------------------------------------------------
-// 2) mapFile (.map)
-//   Obligatoire: Un fichier .map doit commencer par "with L, C, orientation"
-//   Puis au moins une ligne de map (mapRow).
-//   L et C sont des entiers (INT_VALUE).
-//   orientation correspond à un emoji (UP_ARROW, RIGHT_ARROW, etc.).
-//------------------------------------------------------------------------------
+//Game map structure
+
 mapFile
   : MAP WITH INT_VALUE COMMA INT_VALUE COMMA orientation SEMICOLON mapCell+
   ;
 
-// orientation : défini l'emoji de direction initiale (nord, sud, est ou ouest).
+/**
+ * Initial robot orientation on map
+ * Can be up (north), down (south), left (west) or right (east)
+ */
 orientation
-  : UP_ARROW
-  | RIGHT_ARROW
-  | DOWN_ARROW
-  | LEFT_ARROW
+  : UP_ARROW     // ⬆️ (north)
+  | RIGHT_ARROW  // ➡️ (east)
+  | DOWN_ARROW   // ⬇️ (south)
+  | LEFT_ARROW   // ⬅️ (west)
   ;
 
-// mapCell : le contenu d'une case (police, route, obstacle, voleur).
-//   Obligatoire pour représenter chaque case.
 mapCell
-  : COP
-  | ROAD
-  | OBSTACLE
-  | THIEF
+  : COP      // 🚔 (police car)
+  | ROAD     // 🛣️ (road)
+  | OBSTACLE // 🌋🏘️🚧🚜🌊 (various obstacles)
+  | THIEF    // 🦹 (thief)
   ;
 
-//------------------------------------------------------------------------------
-// 3) programFile (.moj)
-//   Fichier de programme. Selon l'énoncé,
-//   on peut avoir : un import (optionnel ou obligatoire selon le projet),
-//                  une mainFunction (souvent obligatoire),
-//                  des déclarations de fonctions (facultatives),
-//                  et des statements.
-//------------------------------------------------------------------------------
+//Global program file structure
+
 programFile
-  : importStatement?        // Bonus ou obligatoire (selon consignes du projet)
-    mainFunction           // Souvent obligatoire, si le cahier des charges exige "main"
-    functionDecl*           // Bonus: fonctions additionnelles
-    statement*              // Différentes instructions
+  : importStatement?     // Optional map import
+    mainFunction         // Required main function
+    functionDecl*        // Optional user functions
+    statement*           // Additional statements
   ;
 
-// importStatement : instruction d'import (ex. 📦 "maCarte.map").
-//   Souvent, ce n'est pas terminé par un ';' selon l'énoncé.
 importStatement
   : PACKAGE STRING_VALUE SEMICOLON?
   ;
 
-// Enumeration des différents types possibles
-// Correspond à n'importe quel type
+//Data types
+
 type
-  : INT_TYPE|BOOL_TYPE|CHAR_TYPE|STRING_TYPE|tupleType
+  : INT_TYPE    // 🔢 (integer)
+  | BOOL_TYPE   // 🔟 (boolean)
+  | CHAR_TYPE   // 🔣 (character)
+  | STRING_TYPE // 🔡 (string)
+  | tupleType   // Tuple of two elements
   ;
 
-// Type de retour qui peut être un type normal ou VOID
 returnType
-  : type
-  | VOID_TYPE
+  : type        // Standard data type
+  | VOID_TYPE   // 🌀 (void - no return)
   ;
 
 tupleType
-  : TUPLE_TYPE LEFT_PARENTHESIS (INT_TYPE | BOOL_TYPE | CHAR_TYPE | STRING_TYPE) RIGHT_PARENTHESIS
+  : TUPLE_TYPE LEFT_PARENTHESIS 
+    ( INT_TYPE     // Integer tuple
+    | BOOL_TYPE    // Boolean tuple
+    | CHAR_TYPE    // Character tuple
+    | STRING_TYPE  // String tuple
+    ) 
+    RIGHT_PARENTHESIS
   ;
 
-// mainFunction : la fonction principale.
-//   Souvent obligatoire dans un langage similaire à C/Java.
-//   Le type est forcément void
-//   Elle est représentée par l'emoji MAIN (🏠) + bloc.
+//   Definition of functions (main and user)
+
 mainFunction
-  : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACE statement+ (VOID_TYPE SEMICOLON)? RIGHT_BRACE
+  : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS 
+    LEFT_BRACE 
+      statement+ 
+      (VOID_TYPE SEMICOLON)? // Optional void return
+    RIGHT_BRACE
   ;
 
-// functionDecl : déclaration de fonctions supplémentaires (bonus).
-//   type ou VOID_TYPE, un identifiant emoji, paramList optionnelle, un bloc.
 functionDecl
-  : returnType EMOJI_ID optionalParamList LEFT_BRACE statement* returnStatement SEMICOLON RIGHT_BRACE
+  : returnType EMOJI_ID optionalParamList 
+    LEFT_BRACE 
+      statement* 
+      returnStatement SEMICOLON // Required return
+    RIGHT_BRACE
   ;
-
 
 optionalParamList
   : LEFT_PARENTHESIS paramList? RIGHT_PARENTHESIS
   ;
 
-// paramList : ensemble de paramètres séparés par des virgules.
 paramList
   : param (COMMA param)*
   ;
 
-// param : ex. 🔢 [x] ou autre type + identifiant.
 param
   : type EMOJI_ID
   ;
 
-//------------------------------------------------------------------------------
-// 4) statement
-//   Liste des instructions possibles dans le .moj.
-//   Plusieurs sont "obligatoires" si le projet l'exige, d'autres "bonus" si non imposées.
-//------------------------------------------------------------------------------
+//   Different instructions allowed in function body
+
 statement
-  : varDecl SEMICOLON         // Déclaration de variable
-  | assignment SEMICOLON      // Affectation
-  | functionCallStmt SEMICOLON
-  | predefinedStmt SEMICOLON
-  | ifStatement               // Conditionnelle if/else
-  | loopStatement             // Boucles
-  | returnStatement SEMICOLON // Retour de fonction
+  : varDecl SEMICOLON         // Variable declaration
+  | assignment SEMICOLON      // Assignment
+  | functionCallStmt SEMICOLON // Function call
+  | predefinedStmt SEMICOLON  // Predefined instruction
+  | ifStatement               // Conditional statement
+  | loopStatement             // Loop
+  | returnStatement SEMICOLON // Function return
   ;
 
 predefinedStmt
-  : STOP_THIEF LEFT_PARENTHESIS RIGHT_PARENTHESIS
-  | SOUND_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS
-  | LIGHT_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS
-  | UP_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS
-  | DOWN_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS
-  | RIGHT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS
-  | LEFT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS
+  : STOP_THIEF LEFT_PARENTHESIS RIGHT_PARENTHESIS                // ✋() Stop thief
+  | SOUND_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS              // 📻() Toggle sound
+  | LIGHT_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS              // 🚨() Toggle lights
+  | UP_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS        // ⬆️(n) Move up
+  | DOWN_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS      // ⬇️(n) Move down
+  | RIGHT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS     // ➡️(n) Move right
+  | LEFT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS      // ⬅️(n) Move left
   ;
 
 varDecl
@@ -139,13 +130,11 @@ assignment
   : leftExpression EQUAL expression
   ;
 
-
 leftExpression
   : EMOJI_ID TUPLE_FIRST
   | EMOJI_ID TUPLE_SECOND
   | EMOJI_ID
   ;
-
 
 functionCallStmt
   : functionCall
@@ -165,40 +154,34 @@ ifStatement
   ;
 
 loopStatement
-  : WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block
-  | FOR LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block  // 🔥 Changement ici !
+  : WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block  // ♾️(condition) { ... }
+  | FOR LEFT_PARENTHESIS expression RIGHT_PARENTHESIS block    // 🔁(condition) { ... }
   ;
-
 
 returnStatement
-  : RETURN expression?
-  | RETURN VOID_TYPE
-  | VOID_TYPE
-  | RETURN_VOID
+  : RETURN expression?  // ↩️ expression - return with optional value
+  | RETURN VOID_TYPE    // ↩️ 🌀 - explicit void return (method 1)
+  | VOID_TYPE           // 🌀 - explicit void return (method 2)
+  | RETURN_VOID         // ↩️🌀 - explicit void return (method 3)
   ;
 
+//Hierarchy for calculations and conditions
 
-//------------------------------------------------------------------------------
-// 5) expression
-//   Gère la logique (ET/OU), les comparaisons, l'arithmétique, etc.
-//   Obligatoire si le langage manipule des calculs ou booléens.
-//------------------------------------------------------------------------------
 expression
-
   : EMOJI_ID
   | orExpression
   ;
 
 orExpression
-  : andExpression (OR andExpression)*
+  : andExpression (OR andExpression)*  // expr ❓ expr
   ;
 
 andExpression
-  : notExpression (AND notExpression)*
+  : notExpression (AND notExpression)*  // expr 🤝 expr
   ;
 
 notExpression
-  : NOT? comparisonExpression
+  : NOT? comparisonExpression  // ⛔ expr
   ;
 
 comparisonExpression
@@ -218,30 +201,25 @@ unaryExpression
   ;
 
 primaryExpression
-  : INT_VALUE
-  | STRING_VALUE
-  | CHAR_VALUE
-  | TRUE
-  | FALSE
-  | NOT primaryExpression
-  | tupleValue
-  | EMOJI_ID
-  | functionCall
-  | leftExpression
-  | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  : INT_VALUE                                   // Integer value
+  | STRING_VALUE                                // String value
+  | CHAR_VALUE                                  // Character value
+  | TRUE                                        // ✅ (true)
+  | FALSE                                       // ❌ (false)
+  | NOT primaryExpression                       // ⛔ expr (negation)
+  | tupleValue                                  // Tuple value
+  | EMOJI_ID                                    // Emoji identifier
+  | functionCall                                // Function call
+  | leftExpression                              // Left expression
+  | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS // Parenthesized expression
   ;
 
-// Ajout de tupleValue pour gérer les tuples
 tupleValue
   : LEFT_PARENTHESIS expression COMMA expression RIGHT_PARENTHESIS
   ;
 
 
-//------------------------------------------------------------------------------
-// 6) block
-//   Un bloc { ... } pour regrouper des statements (ex: dans main, dans if, etc.).
-//   Obligatoire si la syntaxe du projet l'exige pour structurer le code.
-//------------------------------------------------------------------------------
+//   Structure for grouping
 block
   : LEFT_BRACE statement* RIGHT_BRACE
   ;
