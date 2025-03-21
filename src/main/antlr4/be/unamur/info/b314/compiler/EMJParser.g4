@@ -131,9 +131,7 @@ assignment
   ;
 
 leftExpression
-  : EMOJI_ID TUPLE_FIRST
-  | EMOJI_ID TUPLE_SECOND
-  | EMOJI_ID
+  : EMOJI_ID (TUPLE_FIRST | TUPLE_SECOND)?
   ;
 
 functionCallStmt
