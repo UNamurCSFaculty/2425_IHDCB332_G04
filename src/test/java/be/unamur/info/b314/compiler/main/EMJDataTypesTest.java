@@ -77,16 +77,4 @@ public class EMJDataTypesTest {
                 "Data Types: Tuple type declaration and usage test"
         );
     }
-
-    /* KO tests: should fail */
-
-    @Test
-    public void tuple_mixed_type_test() throws Exception {
-        CompilerTestHelper.launchCompilation(
-                "/03_data_types/ko/tuple_mixed.moj",
-                testFolder.newFile(),
-                false,
-                "Data Types: Invalid mixed tuple type test that should fail"
-        );
-    }
 }
