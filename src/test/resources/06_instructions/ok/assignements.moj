@@ -17,8 +17,8 @@
     [🍮] = [🍮] * 2;
 
     📢 Tuple element assignments
-    [🧁]0️⃣ = 100;
-    [🧁]1️⃣ = 200;
+    [🧁]0️ = 100;
+    [🧁]1️ = 200;
 
     📢 Assignments with function calls
     [🍮] = [🍭]([🍮]);

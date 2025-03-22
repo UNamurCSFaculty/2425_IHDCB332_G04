@@ -53,7 +53,7 @@ public class EMJProgramStructureTest {
     @Test
     public void invalid_missing_main_test() throws Exception {
         CompilerTestHelper.launchCompilation(
-                "/01_program_structure/ok/invalid_missing_main.moj",
+                "/01_program_structure/ko/invalid_missing_main.moj",
                 testFolder.newFile(),
                 false,
                 "Program Structure: Invalid program missing main function"

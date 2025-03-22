@@ -67,7 +67,7 @@ public class EMJJenkinsTests {
     @Test
     public void emptyprogram_ko_empty_file() throws Exception {
         CompilerTestHelper.launchCompilation(
-                "/01_program_structure/ko/empty_file.moj",
+                "/01_program_structure/ko/empty_file1.moj",
                 testFolder.newFile(),
                 false,
                 "Comments: Empty file should fail"

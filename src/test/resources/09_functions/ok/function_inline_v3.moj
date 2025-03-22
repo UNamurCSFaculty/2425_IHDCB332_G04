@@ -7,7 +7,7 @@
     [🧪]();
     
     📢 Return statement inside main
-    ↩️ 🔁;
+    ↩️;
 }
 
 📢 Function with void return type
@@ -16,5 +16,5 @@
     🔢 [🚀] = 20;
     
     📢 Return statement with RETURN_VOID
-    ↩️ 🔁;
+    ↩️ 🌀;
 }
