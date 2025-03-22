@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EMJDataTypesTest {
-    private static final Logger LOG = LoggerFactory.getLogger(EMJExampleTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EMJDataTypesTest.class);
 
     @Rule
     // Create a temporary folder for outputs deleted after tests
