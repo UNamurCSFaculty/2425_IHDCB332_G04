@@ -84,7 +84,7 @@ functionDecl
   : returnType EMOJI_ID optionalParamList 
     LEFT_BRACE 
       statement* 
-      (returnStatement SEMICOLON)? // Required return
+      returnStatement SEMICOLON // Required return
     RIGHT_BRACE
   ;
 
