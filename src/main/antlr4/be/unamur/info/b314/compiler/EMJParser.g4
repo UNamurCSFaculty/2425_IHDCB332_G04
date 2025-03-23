@@ -33,7 +33,6 @@ mapCell
   ;
 
 //Global program file structure
-
 programFile
   : importStatement?     // Optional map import
     mainFunction         // Required main function
@@ -46,7 +45,6 @@ importStatement
   ;
 
 //Data types
-
 type
   : INT_TYPE    // 🔢 (integer)
   | BOOL_TYPE   // 🔟 (boolean)
@@ -61,17 +59,10 @@ returnType
   ;
 
 tupleType
-  : TUPLE_TYPE LEFT_PARENTHESIS 
-    ( INT_TYPE     // Integer tuple
-    | BOOL_TYPE    // Boolean tuple
-    | CHAR_TYPE    // Character tuple
-    | STRING_TYPE  // String tuple
-    ) 
-    RIGHT_PARENTHESIS
+  : TUPLE_TYPE LEFT_PARENTHESIS type RIGHT_PARENTHESIS
   ;
 
 //   Definition of functions (main and user)
-
 mainFunction
   : VOID_TYPE MAIN LEFT_PARENTHESIS RIGHT_PARENTHESIS 
     LEFT_BRACE 
@@ -101,7 +92,6 @@ param
   ;
 
 //   Different instructions allowed in function body
-
 statement
   : varDecl SEMICOLON         // Variable declaration
   | assignment SEMICOLON      // Assignment
@@ -113,13 +103,8 @@ statement
   ;
 
 predefinedStmt
-  : STOP_THIEF LEFT_PARENTHESIS RIGHT_PARENTHESIS                // ✋() Stop thief
-  | SOUND_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS              // 📻() Toggle sound
-  | LIGHT_TOGGLE LEFT_PARENTHESIS RIGHT_PARENTHESIS              // 🚨() Toggle lights
-  | UP_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS        // ⬆️(n) Move up
-  | DOWN_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS      // ⬇️(n) Move down
-  | RIGHT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS     // ➡️(n) Move right
-  | LEFT_ARROW LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS      // ⬅️(n) Move left
+  : (STOP_THIEF | SOUND_TOGGLE | LIGHT_TOGGLE) LEFT_PARENTHESIS RIGHT_PARENTHESIS // ✋() Stop thief, // 📻() Toggle sound, // 🚨() Toggle lights
+  | (UP_ARROW | DOWN_ARROW | RIGHT_ARROW | LEFT_ARROW) LEFT_PARENTHESIS INT_VALUE RIGHT_PARENTHESIS // ⬆️(n) Move up, // ⬇️(n) Move down, // ➡️(n) Move right, // ⬅️(n) Move left
   ;
 
 varDecl
@@ -164,10 +149,8 @@ returnStatement
   ;
 
 //Hierarchy for calculations and conditions
-
 expression
-  : EMOJI_ID
-  | orExpression
+  : orExpression
   ;
 
 orExpression
