@@ -6,6 +6,10 @@ import be.unamur.info.b314.compiler.EMJParser;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import java.io.*;
+
+import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
+import be.unamur.info.b314.compiler.emj.EMJVisitor;
+import be.unamur.info.b314.compiler.exception.EMJErrorException;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
@@ -18,6 +22,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+@SuppressWarnings("deprecation")
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -148,7 +154,7 @@ public class Main {
     /**
      * Compiler methods, this is where the magic happens
      */
-    private void compile() throws IOException {
+    private void compile() throws IOException, EMJErrorException {
         try {
             // Get abstract syntax tree
             LOG.debug("Parsing input");
@@ -184,10 +190,31 @@ public class Main {
 
             LOG.debug("Parsing input: done");
             LOG.debug("AST is {}", tree.toStringTree(parser));
+
+            // LEAVE FOLLOWING LINE COMMENTED UNTIL VISITOR IS IMPLEMENTED
+            //this.visitTree(tree);
         }
 
         catch(Exception e) {
             throw e;
         }
     }
+
+
+    private void visitTree(EMJParser.RootContext tree) throws EMJErrorException {
+        // Visit tree
+        EMJVisitor visitor = new EMJVisitor();
+        LOG.debug("Visiting");
+        visitor.visit(tree);
+        LOG.debug("Visiting: done");
+
+        // If an error occurred during the tree visit, throw it
+        EMJErrorLogger errorLogger = visitor.getErrorLogger();
+        if(errorLogger.containsErrors()) {
+            System.out.println(errorLogger.getErrorsString());
+            throw new EMJErrorException(errorLogger.getErrorsString());
+        }
+    }
+
+
 }
