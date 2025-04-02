@@ -57,16 +57,7 @@ public class EMJSymbolTable {
             return symbols.get(fullId);
         }
 
-        // Chercher dans les portées parentes
-        String scope = currentScope;
-        while (scope.contains(".")) {
-            scope = scope.substring(0, scope.lastIndexOf('.'));
-            fullId = scope + ":" + id;
 
-            if (symbols.containsKey(fullId)) {
-                return symbols.get(fullId);
-            }
-        }
         return null;
     }
 }
