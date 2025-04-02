@@ -67,9 +67,6 @@ public class EMJSymbolTable {
                 return symbols.get(fullId);
             }
         }
-
-        // Chercher dans la portée globale
-        fullId = "global:" + id;
-        return symbols.get(fullId);
+        return null;
     }
 }
