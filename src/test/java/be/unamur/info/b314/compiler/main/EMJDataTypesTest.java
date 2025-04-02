@@ -77,4 +77,14 @@ public class EMJDataTypesTest {
                 "Data Types: Tuple type declaration and usage test"
         );
     }
+
+    @Test
+    public void already_declared_test() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/03_data_types/ko/already_declared.moj",
+                testFolder.newFile(),
+                false,
+                "Data Types: Already declared variable test"
+        );
+    }
 }

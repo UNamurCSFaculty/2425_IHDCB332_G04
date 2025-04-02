@@ -1,0 +1,10 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    📢 Testing boolean declarations and operations
+    🔟 [🟢];
+    🔟 [🟢] = ✅;
+    🔟 [🔺] = ❌;
+
+    🌀;
+}
