@@ -15,6 +15,8 @@ public class EMJSymbolTable {
         this.scopes = new Stack<>();
         this.symbols = new HashMap<>();
         this.scopeSymbols = new HashMap<>();
+
+        enterScope("global");
     }
 
     public void enterScope(String scopeName) {

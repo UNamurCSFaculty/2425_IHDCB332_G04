@@ -17,12 +17,13 @@ Visitor class for the EMJ language, extending the base visitor class generated b
 public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisitor<Object> {
 
     private EMJErrorLogger errorLogger;
-    private ArrayList<String> varIds;
+    private EMJSymbolTable symbolTable;
 
     public EMJVisitor() {
         this.errorLogger = new EMJErrorLogger();
-        this.varIds = new ArrayList<String>();
+        this.symbolTable = new EMJSymbolTable();
     }
+
 
     public EMJErrorLogger getErrorLogger() {
         return this.errorLogger;
@@ -31,25 +32,41 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     /*
     SEMANTIC_VAR_DECL
     */
-//    @Override
-//    public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
+    @Override
+    public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
+
+        // SEMANTIC_CHECK_VAR_ID_ALREADY_EXISTS : Check if the id in the variable declaration does not exist yet
+        String varId = ctx.EMOJI_ID().getText();
+
+        // If variable id already exist in variables throw an error
+        if(this.symbolTable.lookup(varId) != null) {
+            this.errorLogger.addError(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
+        }
+
+        String varType = getTypeFromContext(ctx.type());
+        boolean isInitialized = ctx.expression() != null;
+        this.symbolTable.addVariable(varId, varType, isInitialized);
+        // Need to check type compatibility
+
+        return null;
+    }
+
+    private String getTypeFromContext(EMJParser.TypeContext typeCtx) {
+        if (typeCtx.INT_TYPE() != null) {
+            return "INT";
+        } else if (typeCtx.BOOL_TYPE() != null) {
+            return "BOOL";
+        } else if (typeCtx.CHAR_TYPE() != null) {
+            return "CHAR";
+        } else if (typeCtx.STRING_TYPE() != null) {
+            return "STRING";
+        }
+
+        return "UNKNOWN";
+    }
+
 //
-//        // SEMANTIC_CHECK_VAR_ID_ALREADY_EXISTS : Check if the id in the variable declaration does not exist yet
-//        String varId = ctx.EMOJI_ID().getText();
 //
-//        // If the variable id is contained in the variable id array, add an error
-//        if(this.varIds.contains(varId)) {
-//            this.errorLogger.addError(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
-//        }
-//
-//        else {
-//            this.varIds.add(varId);
-//        }
-//
-//        return null;
-//    }
-//
-//    /*
 //    SEMANTIC_VAR_AFFECT
 //    */
 //    @Override

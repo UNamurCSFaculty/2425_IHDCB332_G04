@@ -192,7 +192,7 @@ public class Main {
             LOG.debug("AST is {}", tree.toStringTree(parser));
 
             // LEAVE FOLLOWING LINE COMMENTED UNTIL VISITOR IS IMPLEMENTED
-            //this.visitTree(tree);
+            this.visitTree(tree);
         }
 
         catch(Exception e) {
