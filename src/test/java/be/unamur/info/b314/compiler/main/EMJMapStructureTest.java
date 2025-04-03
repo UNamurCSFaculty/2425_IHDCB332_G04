@@ -47,4 +47,41 @@ public class EMJMapStructureTest {
                 "Map Structure: Basic map test"
         );
     }
+
+
+    @Test
+    public void valid_map_with_one_police_test() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/08_map_structure/ok/map_with_exactly_1_police_car.moj",
+                testFolder.newFile(),
+                true,
+                "Map Structure: Valid map with one police car"
+        );
+    }
+
+
+    /* Not okay tests: should not pass*/
+    @Test
+    public void invalid_map_with_wrong_police_count_test() throws Exception {
+        // Case 1 : No police car
+        CompilerTestHelper.launchCompilation(
+                "/08_map_structure/ko/map_with_no_police.moj",
+                testFolder.newFile(),
+                false,
+                "Map Structure: Invalid map with zero police cars"
+        );
+
+        // Case 2 : 2 police cars
+        CompilerTestHelper.launchCompilation(
+                "/08_map_structure/ko/map_with_two_police.moj",
+                testFolder.newFile(),
+                false,
+                "Map Structure: Invalid map with two police cars"
+        );
+    }
+
+
+
 }
+
+

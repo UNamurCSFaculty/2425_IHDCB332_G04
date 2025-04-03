@@ -65,6 +65,29 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return "UNKNOWN";
     }
 
+
+    @Override
+    public Object visitMapFile(EMJParser.MapFileContext ctx) {
+        int policeCarCount = 0;
+
+        for (EMJParser.MapCellContext cellCtx : ctx.mapCell()) {
+            if (cellCtx.COP() != null) {
+                policeCarCount++;
+            }
+        }
+
+        if (policeCarCount != 1) {
+            this.errorLogger.addError(new EMJError(
+                    "mapPoliceCarCountInvalid",
+                    "The map must contain exactly 1 Police Car, found : " + policeCarCount,
+                    ctx.start.getLine()
+            ));
+        }
+        return null;
+    }
+
+
+
 //
 //
 //    SEMANTIC_VAR_AFFECT
