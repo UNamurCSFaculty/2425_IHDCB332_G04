@@ -68,11 +68,41 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitMapFile(EMJParser.MapFileContext ctx) {
+        int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
+        int height = Integer.parseInt(ctx.INT_VALUE(1).getText());
         int policeCarCount = 0;
+        int thiefCount = 0;
+        int roadCount = 0;
+        int expectedCellCount = width * height;
+        int actualCellCount = ctx.mapCell().size();
+
+        if (width < 2 || height < 2) {
+            this.errorLogger.addError(new EMJError(
+                    "mapTooSmall",
+                    "The map must at least have a width >= 2 and a height >= 2 (current : " + width + "x" + height + ").",
+                    ctx.start.getLine()
+            ));
+        }
+
+        if (expectedCellCount != actualCellCount) {
+            this.errorLogger.addError(new EMJError(
+                    "mapDimensionsMismatch",
+                    "The size given (" + width + "x" + height + " = " + expectedCellCount + " cells) don't match with the number of cells given (" + actualCellCount + ").",
+                    ctx.start.getLine()
+            ));
+        }
+
+
 
         for (EMJParser.MapCellContext cellCtx : ctx.mapCell()) {
             if (cellCtx.COP() != null) {
                 policeCarCount++;
+            }
+            if (cellCtx.THIEF() != null) {
+                thiefCount++;
+            }
+            if (cellCtx.ROAD() != null) {
+                roadCount++;
             }
         }
 
@@ -83,6 +113,23 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     ctx.start.getLine()
             ));
         }
+
+        if (thiefCount < 1) {
+            this.errorLogger.addError(new EMJError(
+                    "mapThiefMissing",
+                    "The map must contain at least 1 Thief, found : " + thiefCount,
+                    ctx.start.getLine()
+            ));
+        }
+
+        if (roadCount < 1) {
+            this.errorLogger.addError(new EMJError(
+                    "mapRoadMissing",
+                    "The map must contain at least 1 Road, found : " + roadCount,
+                    ctx.start.getLine()
+            ));
+        }
+
         return null;
     }
 
