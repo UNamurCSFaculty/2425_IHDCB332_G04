@@ -14,4 +14,13 @@ public class EMJSymbolInfo {
         this.symbolType = symbolType;
         this.isInitialized = initialized;
     }
+    
+    /**
+     * Get the data type of this symbol
+     * 
+     * @return The data type as a string
+     */
+    public String getDataType() {
+        return this.dataType;
+    }
 }
