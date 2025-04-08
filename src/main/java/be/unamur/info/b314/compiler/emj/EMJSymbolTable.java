@@ -49,21 +49,6 @@ public class EMJSymbolTable {
 
         scopeSymbols.get(currentScope).add(fullId);
     }
-    
-    /**
-     * Add a function to the symbol table
-     * 
-     * @param id The function identifier
-     * @param returnType The return type of the function
-     */
-    public void addFunction(String id, String returnType) {
-        String fullId = getFullId(id);
-        
-        EMJSymbolInfo info = new EMJSymbolInfo(id, returnType, currentScope, EMJSymbolType.FUNCTION, true);
-        symbols.put(fullId, info);
-        
-        scopeSymbols.get(currentScope).add(fullId);
-    }
 
     public EMJSymbolInfo lookup(String id) {
         // Chercher d'abord dans la portée actuelle

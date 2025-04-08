@@ -119,12 +119,6 @@ public class EMJVisitor extends EMJParserBaseVisitor<Object> {
         String funcId = ctx.EMOJI_ID().getText();
         System.out.println("Visiting function declaration: " + funcId);
         
-        // SEMANTIC_CHECK_FUNC_ID_ALREADY_EXISTS : Check if the function id already exists in the current scope
-        if (this.symbolTable.lookup(funcId) != null) {
-            this.errorLogger.addError(new EMJError("funcIdAlreadyExists", 
-                "Function " + funcId + " already exists", ctx.start.getLine()));
-        }
-        
         // Get the return type of the function
         String returnType = "VOID";
         if (ctx.returnType().type() != null) {
@@ -132,13 +126,18 @@ public class EMJVisitor extends EMJParserBaseVisitor<Object> {
         }
         
         // Add function to symbol table
+        // In a real implementation, we would also store parameter types
         this.symbolTable.addFunction(funcId, returnType);
+        
+        // Store current scope to restore it later
+        String previousScope = this.currentScope;
+        this.currentScope = funcId;
         
         // Create a new scope for the function
         this.symbolTable.enterScope(funcId);
         
         // Process parameters if they exist
-        if (ctx.optionalParamList() != null && ctx.optionalParamList().paramList() != null) {
+        if (ctx.optionalParamList().paramList() != null) {
             visit(ctx.optionalParamList());
         }
         
@@ -147,20 +146,12 @@ public class EMJVisitor extends EMJParserBaseVisitor<Object> {
             visit(stmtCtx);
         }
         
-        // Visit the return statement if it exists
-        if (ctx.returnStatement() != null) {
-            visit(ctx.returnStatement());
-            // TODO: Verify that return type matches declared type
-        } else {
-            // If no return statement, function must be void
-            if (!returnType.equals("VOID")) {
-                this.errorLogger.addError(new EMJError("missingReturnStatement", 
-                    "Non-void function " + funcId + " missing return statement", ctx.start.getLine()));
-            }
-        }
+        // Visit the return statement
+        visit(ctx.returnStatement());
         
         // Exit the function scope
         this.symbolTable.exitScope();
+        this.currentScope = previousScope;
         
         return null;
     }
@@ -439,222 +430,126 @@ public class EMJVisitor extends EMJParserBaseVisitor<Object> {
     
     /**
      * Visit an or expression (OR operator)
-     * Returns the type of the expression (should be BOOL)
      */
     @Override
     public Object visitOrExpression(EMJParser.OrExpressionContext ctx) {
         // Visit the first and expression
-        String firstType = (String) visit(ctx.andExpression(0));
+        visit(ctx.andExpression(0));
         
-        // If more than one expression, verify all are boolean
+        // Visit any additional and expressions if they exist (separated by OR)
         for (int i = 1; i < ctx.andExpression().size(); i++) {
-            String nextType = (String) visit(ctx.andExpression(i));
-            
-            // Check if both operands are boolean
-            if (!firstType.equals("BOOL") || !nextType.equals("BOOL")) {
-                this.errorLogger.addError(new EMJError("invalidBooleanOperand", 
-                    "OR operator requires boolean operands, found " + firstType + " and " + nextType, 
-                    ctx.start.getLine()));
-            }
+            visit(ctx.andExpression(i));
         }
         
-        // OR expression always returns boolean
-        return "BOOL";
+        // In a full implementation, we would verify that all expressions are boolean type
+        
+        return null;
     }
     
     /**
      * Visit an and expression (AND operator)
-     * Returns the type of the expression (should be BOOL)
      */
     @Override
     public Object visitAndExpression(EMJParser.AndExpressionContext ctx) {
         // Visit the first not expression
-        String firstType = (String) visit(ctx.notExpression(0));
+        visit(ctx.notExpression(0));
         
-        // If more than one expression, verify all are boolean
+        // Visit any additional not expressions if they exist (separated by AND)
         for (int i = 1; i < ctx.notExpression().size(); i++) {
-            String nextType = (String) visit(ctx.notExpression(i));
-            
-            // Check if both operands are boolean
-            if (!firstType.equals("BOOL") || !nextType.equals("BOOL")) {
-                this.errorLogger.addError(new EMJError("invalidBooleanOperand", 
-                    "AND operator requires boolean operands, found " + firstType + " and " + nextType, 
-                    ctx.start.getLine()));
-            }
+            visit(ctx.notExpression(i));
         }
         
-        // AND expression always returns boolean
-        return "BOOL";
+        // In a full implementation, we would verify that all expressions are boolean type
+        
+        return null;
     }
     
     /**
      * Visit a not expression (NOT operator)
-     * Returns the type of the expression (should be BOOL if NOT is used)
      */
     @Override
     public Object visitNotExpression(EMJParser.NotExpressionContext ctx) {
         // Visit the comparison expression
-        String exprType = (String) visit(ctx.comparisonExpression());
+        visit(ctx.comparisonExpression());
         
         // Check if NOT operator is present
         boolean hasNotOperator = ctx.NOT() != null;
         if (hasNotOperator) {
-            // Verify that the expression is boolean type
-            if (!exprType.equals("BOOL")) {
-                this.errorLogger.addError(new EMJError("invalidBooleanOperand", 
-                    "NOT operator requires boolean operand, found " + exprType, 
-                    ctx.start.getLine()));
-            }
-            // NOT expression always returns boolean
-            return "BOOL";
+            // In a full implementation, we would verify that the expression is boolean type
         }
         
-        // If no NOT operator, just pass through the type
-        return exprType;
+        return null;
     }
     
     /**
      * Visit a comparison expression (==, !=, <, <=, >, >=)
-     * Returns the type of the expression (BOOL if comparison operator exists)
      */
     @Override
     public Object visitComparisonExpression(EMJParser.ComparisonExpressionContext ctx) {
         // Visit the first additive expression
-        String leftType = (String) visit(ctx.additiveExpression(0));
+        visit(ctx.additiveExpression(0));
         
         // If there's a comparison operator, visit the second additive expression
         if (ctx.additiveExpression().size() > 1) {
-            String rightType = (String) visit(ctx.additiveExpression(1));
-            String operator = "";
+            visit(ctx.additiveExpression(1));
             
-            // Determine which comparison operator was used
-            if (ctx.EQ() != null) operator = "==";
-            else if (ctx.NEQ() != null) operator = "!=";
-            else if (ctx.LT() != null) operator = "<";
-            else if (ctx.LTE() != null) operator = "<=";
-            else if (ctx.GT() != null) operator = ">";
-            else if (ctx.GTE() != null) operator = ">=";
-            
-            // Check type compatibility for comparison
-            // For equality and inequality, any types can be compared
-            if (ctx.EQ() != null || ctx.NEQ() != null) {
-                // Type comparison should be the same
-                if (!leftType.equals(rightType)) {
-                    this.errorLogger.addError(new EMJError("invalidComparisonOperand", 
-                        "Equality comparison requires the same type for both operands, found " + 
-                        leftType + " and " + rightType, ctx.start.getLine()));
-                }
-            } 
-            // For <, <=, >, >=, operands must be numeric
-            else if (ctx.LT() != null || ctx.LTE() != null || ctx.GT() != null || ctx.GTE() != null) {
-                if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                    this.errorLogger.addError(new EMJError("invalidComparisonOperand", 
-                        "Comparison operator " + operator + " requires integer operands, found " + 
-                        leftType + " and " + rightType, ctx.start.getLine()));
-                }
-            }
-            
-            // Comparison expression always returns boolean
-            return "BOOL";
+            // In a full implementation, we would check type compatibility for comparison
         }
         
-        // If no comparison operator, just pass through the type of the additive expression
-        return leftType;
+        return null;
     }
     
     /**
      * Visit an additive expression (+, -)
-     * Returns the type of the expression
      */
     @Override
     public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
         // Visit the first multiplicative expression
-        String resultType = (String) visit(ctx.multiplicativeExpression(0));
+        visit(ctx.multiplicativeExpression(0));
         
         // Visit any additional multiplicative expressions (separated by + or -)
         for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
-            String nextType = (String) visit(ctx.multiplicativeExpression(i));
-            String operator = ctx.ADD(i-1) != null ? "+" : "-";
+            visit(ctx.multiplicativeExpression(i));
             
-            // Check type compatibility for addition/subtraction
-            // Only integers can be added or subtracted
-            if (!resultType.equals("INT") || !nextType.equals("INT")) {
-                // Special case: String concatenation with +
-                if (operator.equals("+") && resultType.equals("STRING") && nextType.equals("STRING")) {
-                    // String concatenation is allowed
-                    resultType = "STRING";
-                } else {
-                    this.errorLogger.addError(new EMJError("invalidMathOperand", 
-                        "Operator " + operator + " requires integer operands, found " + 
-                        resultType + " and " + nextType, ctx.start.getLine()));
-                }
-            }
+            // In a full implementation, we would check type compatibility for addition/subtraction
         }
         
-        return resultType;
+        return null;
     }
     
     /**
      * Visit a multiplicative expression (*, /)
-     * Returns the type of the expression
      */
     @Override
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
         // Visit the first unary expression
-        String resultType = (String) visit(ctx.unaryExpression(0));
+        visit(ctx.unaryExpression(0));
         
         // Visit any additional unary expressions (separated by * or /)
         for (int i = 1; i < ctx.unaryExpression().size(); i++) {
-            String nextType = (String) visit(ctx.unaryExpression(i));
-            String operator = ctx.MUL(i-1) != null ? "*" : "/";
+            visit(ctx.unaryExpression(i));
             
-            // Check type compatibility for multiplication/division
-            // Only integers can be multiplied or divided
-            if (!resultType.equals("INT") || !nextType.equals("INT")) {
-                this.errorLogger.addError(new EMJError("invalidMathOperand", 
-                    "Operator " + operator + " requires integer operands, found " + 
-                    resultType + " and " + nextType, ctx.start.getLine()));
-            }
-            
-            // Check for division by zero if possible
-            if (operator.equals("/") && ctx.unaryExpression(i).primary() != null && 
-                ctx.unaryExpression(i).primary().INT_LITERAL() != null) {
-                String literal = ctx.unaryExpression(i).primary().INT_LITERAL().getText();
-                if (literal.equals("0")) {
-                    this.errorLogger.addError(new EMJError("invalidDivision", 
-                        "Division by zero detected", ctx.start.getLine()));
-                }
-            }
+            // In a full implementation, we would check type compatibility for multiplication/division
         }
         
-        // Multiplicative expressions with integers always return integers
-        return resultType;
+        return null;
     }
     
     /**
      * Visit a unary expression (unary minus)
-     * Returns the type of the expression
      */
     @Override
     public Object visitUnaryExpression(EMJParser.UnaryExpressionContext ctx) {
         // Visit the primary expression
-        String exprType = (String) visit(ctx.primaryExpression());
+        visit(ctx.primaryExpression());
         
         // Check if unary minus is present
         boolean hasUnaryMinus = ctx.MINUS() != null;
         if (hasUnaryMinus) {
-            // Verify that the expression is a numeric type
-            if (!exprType.equals("INT")) {
-                this.errorLogger.addError(new EMJError("invalidUnaryOperand", 
-                    "Unary minus requires integer operand, found " + exprType, 
-                    ctx.start.getLine()));
-            }
-            // Unary minus on integer remains an integer
-            return "INT";
+            // In a full implementation, we would verify that the expression is a numeric type
         }
         
-        // If no unary operator, just pass through the type of the primary expression
-        return exprType;
+        return null;
     }
     
     /**
@@ -695,130 +590,47 @@ public class EMJVisitor extends EMJParserBaseVisitor<Object> {
             return info.getDataType();
         } else if (ctx.functionCall() != null) {
             // Function call
-            return visit(ctx.functionCall());
+            visit(ctx.functionCall());
+            // In a full implementation, we would return the function's return type
+            return "UNKNOWN";
         } else if (ctx.leftExpression() != null) {
-            // Left expression - e.g., array access, struct member
-            return visit(ctx.leftExpression());
+            // Left expression
+            visit(ctx.leftExpression());
+            // In a full implementation, we would return the variable's type
+            return "UNKNOWN";
         } else if (ctx.expression() != null) {
             // Parenthesized expression
             return visit(ctx.expression());
         }
         
-        // If we get here, it's an unknown type
-        this.errorLogger.addError(new EMJError("unknownPrimaryExpressionType", 
-            "Unknown type for primary expression", ctx.start.getLine()));
         return "UNKNOWN";
     }
     
     /**
      * Visit a tuple value
-     * Checks that tuple elements have valid types
      */
     @Override
     public Object visitTupleValue(EMJParser.TupleValueContext ctx) {
-        // Visit all expressions in the tuple
-        List<String> elementTypes = new ArrayList<>();
-        for (EMJParser.ExpressionContext expr : ctx.expression()) {
-            String exprType = (String) visit(expr);
-            elementTypes.add(exprType);
-        }
-        
-        // In EMJ, tuples are primarily used for coordinates
-        // Check if there are exactly 2 elements and they are both integers
-        if (elementTypes.size() != 2) {
-            this.errorLogger.addError(new EMJError("invalidTupleSize", 
-                "Tuple must have exactly 2 elements, found " + elementTypes.size(), 
-                ctx.start.getLine()));
-        } else {
-            // Verify both elements are integers (for coordinates)
-            for (int i = 0; i < elementTypes.size(); i++) {
-                if (!elementTypes.get(i).equals("INT")) {
-                    this.errorLogger.addError(new EMJError("invalidTupleElementType", 
-                        "Tuple element must be an integer, found " + elementTypes.get(i), 
-                        ctx.start.getLine()));
-                }
-            }
-        }
+        // Visit both expressions in the tuple
+        visit(ctx.expression(0));
+        visit(ctx.expression(1));
         
         return "TUPLE";
     }
     
     /**
      * Visit predefined statements (built-in robot actions)
-     * Checks parameters for predefined actions
      */
     @Override
     public Object visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx) {
-        if (ctx.expression() != null) {
-            // If there's an expression parameter, verify its type is appropriate
-            String exprType = (String) visit(ctx.expression());
-            
-            // For move commands with distance parameter, it should be an integer
-            if (!exprType.equals("INT")) {
-                this.errorLogger.addError(new EMJError("invalidPredefinedParameter", 
-                    "Predefined action parameter must be an integer, found " + exprType, 
-                    ctx.start.getLine()));
-            }
+        System.out.println("Visiting predefined statement...");
+        
+        // In a full implementation, we would verify parameters for move commands
+        if (ctx.INT_VALUE() != null) {
+            // This is a move command with a distance parameter
         }
         
         return null;
-    }
-    
-    /**
-     * Visit a function call
-     * Verifies that the function exists and that the arguments match the parameters
-     * @return The return type of the function
-     */
-    @Override
-    public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) {
-        // Get the function name
-        String funcId = ctx.EMOJI_ID().getText();
-        
-        // Look up the function in the symbol table
-        EMJSymbolInfo funcInfo = symbolTable.lookup(funcId);
-        if (funcInfo == null) {
-            // Function not found - report error
-            this.errorLogger.addError(new EMJError("funcIdNotDecl", 
-                "Function " + funcId + " not declared", ctx.start.getLine()));
-            return "UNKNOWN";
-        }
-        
-        // Verify this is actually a function
-        if (!funcInfo.isFunction()) {
-            this.errorLogger.addError(new EMJError("notAFunction", 
-                "Symbol " + funcId + " is not a function", ctx.start.getLine()));
-            return "UNKNOWN";
-        }
-        
-        // Get the function's parameter types and return type
-        List<String> paramTypes = funcInfo.getParamTypes();
-        String returnType = funcInfo.getDataType();
-        
-        // Get the argument list from the context
-        List<EMJParser.ExpressionContext> args = ctx.expressionList() != null ? 
-            ctx.expressionList().expression() : new ArrayList<>();
-        
-        // Check if the number of arguments matches the number of parameters
-        if (args.size() != paramTypes.size()) {
-            this.errorLogger.addError(new EMJError("invalidArgumentCount", 
-                "Function " + funcId + " expects " + paramTypes.size() + 
-                " arguments, but got " + args.size(), ctx.start.getLine()));
-        } else {
-            // Check each argument's type against the corresponding parameter type
-            for (int i = 0; i < args.size(); i++) {
-                String argType = (String) visit(args.get(i));
-                String paramType = paramTypes.get(i);
-                
-                if (!argType.equals(paramType)) {
-                    this.errorLogger.addError(new EMJError("invalidArgumentType", 
-                        "Function " + funcId + ": argument " + (i + 1) + " should be " + 
-                        paramType + ", but got " + argType, ctx.start.getLine()));
-                }
-            }
-        }
-        
-        // Return the function's return type
-        return returnType;
     }
 
 
