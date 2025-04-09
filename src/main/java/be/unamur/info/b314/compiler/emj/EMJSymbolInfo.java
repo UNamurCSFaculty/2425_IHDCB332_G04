@@ -14,4 +14,28 @@ public class EMJSymbolInfo {
         this.symbolType = symbolType;
         this.isInitialized = initialized;
     }
+    
+    public String getId() {
+        return id;
+    }
+    
+    public String getDataType() {
+        return dataType;
+    }
+    
+    public String getScope() {
+        return scope;
+    }
+    
+    public EMJSymbolType getSymbolType() {
+        return symbolType;
+    }
+    
+    public boolean isInitialized() {
+        return isInitialized;
+    }
+    
+    public void setInitialized(boolean initialized) {
+        this.isInitialized = initialized;
+    }
 }

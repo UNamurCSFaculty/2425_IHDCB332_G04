@@ -8,6 +8,7 @@ public class EMJSymbolTable {
     private final Stack<String> scopes;
     private final Map<String, EMJSymbolInfo> symbols;
     private final Map<String, List<String>> scopeSymbols;
+    private String currentFunctionReturnType; // Type de retour de la fonction courante
 
     private String currentScope;
 
@@ -15,6 +16,7 @@ public class EMJSymbolTable {
         this.scopes = new Stack<>();
         this.symbols = new HashMap<>();
         this.scopeSymbols = new HashMap<>();
+        this.currentFunctionReturnType = null;
 
         enterScope("global");
     }
@@ -48,6 +50,26 @@ public class EMJSymbolTable {
         symbols.put(fullId, info);
 
         scopeSymbols.get(currentScope).add(fullId);
+    }
+    
+    public void addFunction(String id, String returnType) {
+        String fullId = getFullId(id);
+        
+        EMJSymbolInfo info = new EMJSymbolInfo(id, returnType, currentScope, EMJSymbolType.FUNCTION, true);
+        symbols.put(fullId, info);
+        
+        scopeSymbols.get(currentScope).add(fullId);
+        
+        // Stocke le type de retour pour vérification ultérieure
+        this.currentFunctionReturnType = returnType;
+    }
+    
+    public String getCurrentFunctionReturnType() {
+        return this.currentFunctionReturnType;
+    }
+    
+    public void clearCurrentFunctionReturnType() {
+        this.currentFunctionReturnType = null;
     }
 
     public EMJSymbolInfo lookup(String id) {
