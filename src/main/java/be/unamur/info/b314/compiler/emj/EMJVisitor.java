@@ -134,22 +134,63 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
 
+    @Override
+    public Object visitMainFunction(EMJParser.MainFunctionContext ctx) {
 
-//
-//
-//    SEMANTIC_VAR_AFFECT
-//    */
-//    @Override
-//    public Object visitVarAffect(EMJParser.VarAffectContext ctx) {
-//
-//        // SEMANTIC_CHECK_VAR_IS_DECL : Check if an id in a variable affectation has been previously declared
-//        String varId = ctx.EMOJI_ID().getText();
-//
-//        // If the variable id is not contained in the variable id array, add an error
-//        if(!this.varIds.contains(varId)) {
-//            this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
-//        }
-//
-//        return null;
-//    }
+        symbolTable.enterScope("main");
+        Object result = visitChildren(ctx);
+        symbolTable.exitScope();
+        return result;
+    }
+
+    @Override
+    public Object visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
+
+        symbolTable.enterScope("function");
+        Object result = visitChildren(ctx);
+        symbolTable.exitScope();
+        return result;
+    }
+
+    @Override
+    public Object visitLoopStatement(EMJParser.LoopStatementContext ctx) {
+
+        symbolTable.enterScope("loop");
+        Object result = visitChildren(ctx);
+        symbolTable.exitScope();
+        return result;
+    }
+
+    @Override
+    public Object visitIfStatement(EMJParser.IfStatementContext ctx) {
+
+        symbolTable.enterScope("if");
+        Object result = visitChildren(ctx);
+        symbolTable.exitScope();
+        return result;
+    }
+
+    @Override
+    public Object visitBlock(EMJParser.BlockContext ctx) {
+
+        symbolTable.enterScope("block");
+        Object result = visitChildren(ctx);
+        symbolTable.exitScope();
+        return result;
+    }
+
+
+    @Override
+    public Object visitAssignment(EMJParser.AssignmentContext ctx){
+
+        // SEMANTIC_CHECK_VAR_IS_DECL : Check if an id in a variable affectation has been previously declared
+        String varId = ctx.leftExpression().EMOJI_ID().getText();
+
+        // If the variable id is not contained in the variable id array, add an error
+        if(this.symbolTable.lookup(varId) != null) {
+            this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
+        }
+
+        return null;
+    }
 }
