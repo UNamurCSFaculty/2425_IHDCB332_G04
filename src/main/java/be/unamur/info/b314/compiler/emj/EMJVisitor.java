@@ -167,24 +167,72 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
-        // S'il y a un opérateur + ou -, c'est un entier
-        if (ctx.PLUS().size() > 0 || ctx.MINUS().size() > 0) {
-            return "INT";
+        // On commence par le premier opérande
+        Object leftObj = visit(ctx.multiplicativeExpression(0));
+        String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
+
+        for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
+            Object rightObj = visit(ctx.multiplicativeExpression(i));
+            String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
+
+            // Vérifie que les deux opérandes sont des entiers
+            if (!leftType.equals("INT") || !rightType.equals("INT")) {
+                errorLogger.addError(new EMJError(
+                        "invalidOperandType",
+                        "Operands of '+' or '-' must be of type INT, found: " + leftType + " and " + rightType,
+                        ctx.start.getLine()
+                ));
+            }
+
+            // Pour les itérations suivantes
+            leftType = "INT";
         }
 
-        // Sinon, déléguer au premier multiplicativeExpression
-        return visit(ctx.multiplicativeExpression(0));
+        return "INT";
     }
+
 
     @Override
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
-        // S'il y a un opérateur * ou /, c'est un entier
-        if (ctx.MULTIPLY().size() > 0 || ctx.DIVIDE().size() > 0) {
-            return "INT";
+        Object leftObj = visit(ctx.unaryExpression(0));
+        String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
+
+        for (int i = 1; i < ctx.unaryExpression().size(); i++) {
+            Object rightObj = visit(ctx.unaryExpression(i));
+            String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
+
+            // Vérifie que les types sont bien INT
+            if (!leftType.equals("INT") || !rightType.equals("INT")) {
+                errorLogger.addError(new EMJError(
+                        "invalidOperandType",
+                        "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
+                        ctx.start.getLine()
+                ));
+            }
+
+            // Vérifie la division par zéro uniquement si la valeur est littérale
+            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c’est un opérateur '/'
+                EMJParser.UnaryExpressionContext rightExpr = ctx.unaryExpression(i);
+                if (rightExpr.primaryExpression() != null && rightExpr.primaryExpression().INT_VALUE() != null) {
+                    String valueText = rightExpr.primaryExpression().INT_VALUE().getText();
+                    try {
+                        int val = Integer.parseInt(valueText);
+                        if (val == 0) {
+                            errorLogger.addError(new EMJError(
+                                    "divisionByZero",
+                                    "Division by zero is not allowed.",
+                                    ctx.start.getLine()
+                            ));
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
+            leftType = "INT"; // continuer avec un type INT
         }
 
-        // Sinon, déléguer au premier unaryExpression
-        return visit(ctx.unaryExpression(0));
+        return "INT";
     }
 
     @Override
