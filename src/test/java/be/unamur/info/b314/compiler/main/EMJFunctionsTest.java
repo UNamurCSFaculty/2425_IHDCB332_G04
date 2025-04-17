@@ -113,4 +113,44 @@ public class EMJFunctionsTest {
                 "Should fail: function call not declared"
         );
     }
+
+    @Test
+    public void test_ko_parameter_same_id_as_variable() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/parameter_same_id_as_variable.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: parameter name reused as variable"
+        );
+    }
+
+    @Test
+    public void test_ko_parameter_call_invalid_function_type() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/parameter_call_invalid_function_type.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: function returns a type incompatible with the expected parameter type"
+        );
+    }
+
+    @Test
+    public void test_ko_parameter_call_invalid_type() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/parameter_call_invalid_type.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: incorrect parameter types passed to function"
+        );
+    }
+
+    @Test
+    public void test_ko_parameter_value_invalid_type() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/parameter_value_invalid_type.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: a string is passed instead of an expected integer"
+        );
+    }
 }
