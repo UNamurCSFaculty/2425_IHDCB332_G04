@@ -17,8 +17,8 @@ Visitor class for the EMJ language, extending the base visitor class generated b
 */
 public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisitor<Object> {
 
-    private EMJErrorLogger errorLogger;
-    private EMJSymbolTable symbolTable;
+    private final EMJErrorLogger errorLogger;
+    private final EMJSymbolTable symbolTable;
 
     public EMJVisitor() {
         this.errorLogger = new EMJErrorLogger();
@@ -122,7 +122,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     @Override
     public Object visitOrExpression(EMJParser.OrExpressionContext ctx) {
         // S'il y a plus d'une andExpression connectée par OR, c'est un booléen
-        if (ctx.OR().size() > 0) {
+        if (!ctx.OR().isEmpty()) {
             return "BOOL";
         }
 
@@ -133,7 +133,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     @Override
     public Object visitAndExpression(EMJParser.AndExpressionContext ctx) {
         // S'il y a plus d'une notExpression connectée par AND, c'est un booléen
-        if (ctx.AND().size() > 0) {
+        if (!ctx.AND().isEmpty()) {
             return "BOOL";
         }
 
@@ -486,6 +486,39 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     ctx.start.getLine()
             ));
         }
+        return null;
+    }
+
+    @Override
+    public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) {
+        String functionName = ctx.EMOJI_ID().getText(); // Retrieve the name of the called function
+
+        // Retrieve the number of arguments passed to the function call
+        List<EMJParser.ExpressionContext> args =
+                ctx.argumentList() != null ? ctx.argumentList().expression() : new ArrayList<>();
+
+        // Retrieve the function definition from the symbol table
+        EMJSymbolInfo functionSymbol = symbolTable.lookup(functionName);
+
+        if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
+            errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
+            return null;
+        }
+
+        int expected = functionSymbol.getParameters() != null ? functionSymbol.getParameters().size() : 0;
+        int actual = args.size();
+
+        if (actual < expected) {
+            errorLogger.addError(new EMJError("Too few parameters", functionName, ctx.getStart().getLine()));
+        } else if (actual > expected) {
+            errorLogger.addError(new EMJError("Too many parameters", functionName, ctx.getStart().getLine()));
+        }
+
+        // Visit each argument expression to perform semantic checks
+        for (EMJParser.ExpressionContext arg : args) {
+            visit(arg);
+        }
+
         return null;
     }
 }
