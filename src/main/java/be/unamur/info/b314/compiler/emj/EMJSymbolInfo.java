@@ -38,6 +38,14 @@ public class EMJSymbolInfo {
     public String getReturnType() {
         return returnType;
     }
+
+    public List<EMJParameterInfo> getParameters() {
+        return parameters;
+    }
+
+    public EMJSymbolType getSymbolType() {
+        return symbolType;
+    }
 }
 
 
