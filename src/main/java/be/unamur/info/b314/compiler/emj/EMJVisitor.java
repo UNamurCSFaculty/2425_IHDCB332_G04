@@ -579,20 +579,17 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         // Vérifier si la fonction est de type void et si elle est appelée dans une expression
         if ("VOID".equals(functionSymbol.getReturnType())) {
-            // Vérifier si l'appel de fonction est utilisé dans un contexte d'expression
-            // comme une affectation, une condition, un paramètre, etc.
-            boolean isUsedInExpression = false;
+            // Pour les fonctions void, vérifier si elles sont utilisées dans une expression
+            // Nous considérons tout contexte autre qu'une instruction directe comme une expression
+            boolean isUsedInExpression = true; // Par défaut, considérer comme utilisé dans une expression
             
-            // Vérifier si l'appel est directement dans une expression
-            if (ctx.getParent() instanceof EMJParser.PrimaryExpressionContext) {
-                isUsedInExpression = true;
-            }
-            // Vérifier si l'appel est dans une expression d'affectation
-            else if (ctx.getParent() instanceof EMJParser.ExpressionContext) {
-                isUsedInExpression = true;
+            // Vérifier si l'appel est directement dans une instruction (statement)
+            if (ctx.getParent() instanceof EMJParser.StatementContext) {
+                isUsedInExpression = false;
             }
             
             if (isUsedInExpression) {
+                // Ajouter une erreur sémantique pour l'utilisation d'une fonction void dans une expression
                 errorLogger.addError(new EMJError(
                     "voidFunctionInExpression",
                     "Function " + functionName + " has void return type and cannot be used in an expression",
