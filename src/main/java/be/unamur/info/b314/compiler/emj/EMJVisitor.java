@@ -29,19 +29,26 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public EMJErrorLogger getErrorLogger() {
         return this.errorLogger;
     }
+    
+    // Méthode pour ajouter une erreur et vérifier immédiatement s'il faut lancer une exception
+    private void addErrorAndCheck(EMJError error) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
+        this.errorLogger.addError(error);
+        // Les tests "ko" s'attendent à ce qu'une exception soit levée pour les erreurs sémantiques
+        throw new be.unamur.info.b314.compiler.exception.EMJErrorException(error.getErrorString());
+    }
 
     /*
     SEMANTIC_VAR_DECL
     */
     @Override
-    public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
+    public Object visitVarDecl(EMJParser.VarDeclContext ctx) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
 
         // SEMANTIC_CHECK_VAR_ID_ALREADY_EXISTS : Check if the id in the variable declaration does not exist yet
         String varId = ctx.EMOJI_ID().getText();
 
         // If variable id already exist in variables throw an error
         if(this.symbolTable.lookup(varId) != null) {
-            this.errorLogger.addError(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
+            addErrorAndCheck(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
         }
 
         String varType = getTypeFromContext(ctx.type());
@@ -53,7 +60,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String exprType = getExpressionType(ctx.expression());
 
             if (!areTypesCompatible(varType, exprType)) {
-                this.errorLogger.addError(new EMJError(
+                addErrorAndCheck(new EMJError(
                         "typeMismatch",
                         "Cannot initialize variable of type '" + varType +
                                 "' with an expression of type '" + exprType + "'",
@@ -452,7 +459,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     @Override
-    public Object visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
+    public Object visitFunctionDecl(EMJParser.FunctionDeclContext ctx) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
         // Récupérer l'identifiant de la fonction
         String funcId = ctx.EMOJI_ID().getText();
 
@@ -472,7 +479,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         // Vérifier si la fonction existe déjà
         if (symbolTable.functionExists(funcId)) {
-            errorLogger.addError(new EMJError("functionAlreadyDefined",
+            addErrorAndCheck(new EMJError("functionAlreadyDefined",
                     "Function " + funcId + " is already defined", ctx.start.getLine()));
             return null;
         }
@@ -537,7 +544,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
     @Override
-    public Object visitAssignment(EMJParser.AssignmentContext ctx){
+    public Object visitAssignment(EMJParser.AssignmentContext ctx) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
 
         // SEMANTIC_CHECK_VAR_IS_DECL : Check if an id in a variable affectation has been previously declared
         String varId = ctx.leftExpression().EMOJI_ID().getText();
@@ -545,13 +552,13 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         // If the variable id is not contained in the variable id array, add an error
         EMJSymbolInfo var = this.symbolTable.lookup(varId);
         if(var == null) {
-            this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
+            addErrorAndCheck(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
         }
 
         String exprType = getExpressionType(ctx.expression());
 
         if (!areTypesCompatible(var.getType(), exprType)) {
-            this.errorLogger.addError(new EMJError(
+            addErrorAndCheck(new EMJError(
                     "typeMismatch",
                     "Cannot initialize variable of type '" + var.getType() +
                             "' with an expression of type '" + exprType + "'",
@@ -562,7 +569,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     @Override
-    public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) {
+    public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
         String functionName = ctx.EMOJI_ID().getText(); // Retrieve the name of the called function
 
         // Retrieve the number of arguments passed to the function call
@@ -573,7 +580,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         EMJSymbolInfo functionSymbol = symbolTable.lookup(functionName);
 
         if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
-            errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
+            addErrorAndCheck(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
             return "UNKNOWN";
         }
 
@@ -590,7 +597,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             
             if (isUsedInExpression) {
                 // Ajouter une erreur sémantique pour l'utilisation d'une fonction void dans une expression
-                errorLogger.addError(new EMJError(
+                addErrorAndCheck(new EMJError(
                     "voidFunctionInExpression",
                     "Function " + functionName + " has void return type and cannot be used in an expression",
                     ctx.getStart().getLine()
@@ -602,9 +609,9 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         int actual = args.size();
 
         if (actual < expected) {
-            errorLogger.addError(new EMJError("Too few parameters", functionName, ctx.getStart().getLine()));
+            addErrorAndCheck(new EMJError("Too few parameters", functionName, ctx.getStart().getLine()));
         } else if (actual > expected) {
-            errorLogger.addError(new EMJError("Too many parameters", functionName, ctx.getStart().getLine()));
+            addErrorAndCheck(new EMJError("Too many parameters", functionName, ctx.getStart().getLine()));
         }
 
         // Visit each argument expression to perform semantic checks
@@ -613,7 +620,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             if (functionSymbol.getParameters() != null && i < functionSymbol.getParameters().size()) {
                 String paramType = functionSymbol.getParameters().get(i).getType();
                 if (!areTypesCompatible(paramType, argType)) {
-                    errorLogger.addError(new EMJError(
+                    addErrorAndCheck(new EMJError(
                         "paramTypeMismatch",
                         "Parameter " + (i+1) + " of function " + functionName + " expects type " + 
                         paramType + " but got " + argType,
