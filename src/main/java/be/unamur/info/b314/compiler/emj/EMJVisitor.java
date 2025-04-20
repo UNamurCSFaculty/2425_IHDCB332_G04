@@ -66,6 +66,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     private boolean areTypesCompatible(String declaredType, String exprType) {
+        // Si l'un des types est inconnu, considérer comme incompatible
+        if (declaredType == null || exprType == null || "UNKNOWN".equals(declaredType) || "UNKNOWN".equals(exprType)) {
+            return false;
+        }
+        
         // Direct match
         if (declaredType.equals(exprType)) {
             return true;
@@ -77,7 +82,25 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String innerExprType = exprType.substring(6, exprType.length() - 1);
             return areTypesCompatible(innerDeclaredType, innerExprType);
         }
+        
+        // Vérifier explicitement les incompatibilités courantes
+        if ("INT".equals(declaredType) && ("STRING".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
+            return false;
+        }
+        
+        if ("STRING".equals(declaredType) && ("INT".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
+            return false;
+        }
+        
+        if ("BOOL".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "CHAR".equals(exprType))) {
+            return false;
+        }
+        
+        if ("CHAR".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "BOOL".equals(exprType))) {
+            return false;
+        }
 
+        // Si on arrive ici, les types sont considérés comme incompatibles
         return false;
     }
 
