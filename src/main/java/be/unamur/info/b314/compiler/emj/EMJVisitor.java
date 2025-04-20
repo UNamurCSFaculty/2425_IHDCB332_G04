@@ -516,6 +516,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return "UNKNOWN";
         }
 
+        // Vérifier si la fonction est de type void et si elle est appelée dans une expression
+        if ("VOID".equals(functionSymbol.getReturnType()) && !(ctx.getParent() instanceof EMJParser.StatementContext)) {
+            errorLogger.addError(new EMJError(
+                "voidFunctionInExpression",
+                "Function " + functionName + " has void return type and cannot be used in an expression",
+                ctx.getStart().getLine()
+            ));
+        }
+
         int expected = functionSymbol.getParameters() != null ? functionSymbol.getParameters().size() : 0;
         int actual = args.size();
 
@@ -526,8 +535,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         }
 
         // Visit each argument expression to perform semantic checks
-        for (EMJParser.ExpressionContext arg : args) {
-            visit(arg);
+        for (int i = 0; i < Math.min(actual, expected); i++) {
+            String argType = (String) visit(args.get(i));
+            if (functionSymbol.getParameters() != null && i < functionSymbol.getParameters().size()) {
+                String paramType = functionSymbol.getParameters().get(i).getType();
+                if (!areTypesCompatible(paramType, argType)) {
+                    errorLogger.addError(new EMJError(
+                        "paramTypeMismatch",
+                        "Parameter " + (i+1) + " of function " + functionName + " expects type " + 
+                        paramType + " but got " + argType,
+                        ctx.getStart().getLine()
+                    ));
+                }
+            }
         }
 
         // Return the function's return type
