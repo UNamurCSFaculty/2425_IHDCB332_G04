@@ -142,7 +142,7 @@ loopStatement
   ;
 
 returnStatement
-  : RETURN expression?  // ↩️ expression - return with optional value
+  : RETURN expression  // ↩️ expression - return with optional value
   | RETURN VOID_TYPE    // ↩️ 🌀 - explicit void return (method 1)
   | VOID_TYPE           // 🌀 - explicit void return (method 2)
   | RETURN_VOID         // ↩️🌀 - explicit void return (method 3)

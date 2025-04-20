@@ -84,6 +84,10 @@ public class EMJSymbolTable {
     public boolean functionExists(String id) {
         String fullId = "global:" + id;
         EMJSymbolInfo info = symbols.get(fullId);
-        return info != null && info.getType() == EMJSymbolType.FUNCTION.toString();
+        return info != null && info.getSymbolType() == EMJSymbolType.FUNCTION;
+    }
+    
+    public String getCurrentScope() {
+        return currentScope;
     }
 }
