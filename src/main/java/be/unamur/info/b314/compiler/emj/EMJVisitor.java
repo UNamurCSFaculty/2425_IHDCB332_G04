@@ -259,8 +259,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return "BOOL";
         } else if (ctx.tupleValue() != null) {
             // Pour les tuples, il faut obtenir le type des éléments
-            String elementType = (String) visit(ctx.tupleValue().expression(0));
-            return "TUPLE(" + elementType + ")";
+            String elementType1 = (String) visit(ctx.tupleValue().expression(0));
+            String elementType2 = (String) visit(ctx.tupleValue().expression(1));
+            
+            // Vérifier que les deux éléments ont le même type
+            if (!elementType1.equals(elementType2)) {
+                errorLogger.addError(new EMJError(
+                    "tupleMismatchedTypes",
+                    "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
+                    ctx.start.getLine()
+                ));
+            }
+            
+            return "TUPLE(" + elementType1 + ")";
         } else if (ctx.EMOJI_ID() != null) {
             // Pour les variables, consulter la table des symboles
             String varId = ctx.EMOJI_ID().getText();
@@ -502,7 +513,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
             errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
-            return null;
+            return "UNKNOWN";
         }
 
         int expected = functionSymbol.getParameters() != null ? functionSymbol.getParameters().size() : 0;
@@ -519,6 +530,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             visit(arg);
         }
 
-        return null;
+        // Return the function's return type
+        return functionSymbol.getReturnType();
     }
 }
