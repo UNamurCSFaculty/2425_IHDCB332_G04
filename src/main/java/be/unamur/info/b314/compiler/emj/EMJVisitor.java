@@ -250,6 +250,44 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
         // Déterminer le type en fonction du contenu
         if (ctx.INT_VALUE() != null) {
+            String intValue = ctx.INT_VALUE().getText();
+            
+            // Vérifier si l'entier commence par 0 (sauf s'il est égal à 0)
+            if (intValue.length() > 1 && intValue.charAt(0) == '0') {
+                errorLogger.addError(new EMJError(
+                    "intStartsWithZero",
+                    "Integer value cannot start with 0: " + intValue,
+                    ctx.start.getLine()
+                ));
+            }
+            
+            // Vérifier si l'entier est trop grand ou trop petit
+            try {
+                int value = Integer.parseInt(intValue);
+                // En Java, Integer.MAX_VALUE est 2^31-1 et Integer.MIN_VALUE est -2^31
+                // Mais nous pouvons définir nos propres limites pour le langage EMJ
+                if (value > 1000000000) { // 10^9 comme limite supérieure
+                    errorLogger.addError(new EMJError(
+                        "integerTooBig",
+                        "Integer value too big: " + intValue,
+                        ctx.start.getLine()
+                    ));
+                } else if (value < -1000000000) { // -10^9 comme limite inférieure
+                    errorLogger.addError(new EMJError(
+                        "integerTooSmall",
+                        "Integer value too small: " + intValue,
+                        ctx.start.getLine()
+                    ));
+                }
+            } catch (NumberFormatException e) {
+                // Si l'entier ne peut pas être parsé (trop grand pour un int Java)
+                errorLogger.addError(new EMJError(
+                    "invalidIntegerFormat",
+                    "Invalid integer format: " + intValue,
+                    ctx.start.getLine()
+                ));
+            }
+            
             return "INT";
         } else if (ctx.STRING_VALUE() != null) {
             return "STRING";
