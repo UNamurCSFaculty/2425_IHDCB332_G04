@@ -29,13 +29,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public EMJErrorLogger getErrorLogger() {
         return this.errorLogger;
     }
-    
-    // Méthode pour ajouter une erreur et vérifier immédiatement s'il faut lancer une exception
-    private void addErrorAndCheck(EMJError error) throws be.unamur.info.b314.compiler.exception.EMJErrorException {
-        this.errorLogger.addError(error);
-        // Les tests "ko" s'attendent à ce qu'une exception soit levée pour les erreurs sémantiques
-        throw new be.unamur.info.b314.compiler.exception.EMJErrorException(error.getErrorString());
-    }
 
     /*
     SEMANTIC_VAR_DECL
@@ -48,7 +41,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         // If variable id already exist in variables throw an error
         if(this.symbolTable.lookup(varId) != null) {
-            addErrorAndCheck(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
+            this.errorLogger.addError(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
         }
 
         String varType = getTypeFromContext(ctx.type());
@@ -60,11 +53,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String exprType = getExpressionType(ctx.expression());
 
             if (!areTypesCompatible(varType, exprType)) {
-                addErrorAndCheck(new EMJError(
-                    "typeMismatch",
-                    "Cannot initialize variable of type '" + varType +
-                            "' with an expression of type '" + exprType + "'",
-                    ctx.start.getLine()
+                this.errorLogger.addError(new EMJError(
+                        "typeMismatch",
+                        "Cannot initialize variable of type '" + varType +
+                                "' with an expression of type '" + exprType + "'",
+                        ctx.start.getLine()
                 ));
             }
         }
@@ -207,15 +200,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
             // Vérifie que les deux opérandes sont des entiers
             if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                try {
-                    addErrorAndCheck(new EMJError(
+                errorLogger.addError(new EMJError(
                         "invalidOperandType",
                         "Operands of '+' or '-' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
-                    ));
-                } catch (Exception e) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                ));
             }
 
             // Pour les itérations suivantes
@@ -237,15 +226,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
             // Vérifie que les types sont bien INT
             if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                try {
-                    addErrorAndCheck(new EMJError(
+                errorLogger.addError(new EMJError(
                         "invalidOperandType",
                         "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
-                    ));
-                } catch (Exception e) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                ));
             }
 
             // Vérifie la division par zéro uniquement si la valeur est littérale
@@ -256,15 +241,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     try {
                         int val = Integer.parseInt(valueText);
                         if (val == 0) {
-                            try {
-                                addErrorAndCheck(new EMJError(
+                            errorLogger.addError(new EMJError(
                                     "divisionByZero",
                                     "Division by zero is not allowed.",
                                     ctx.start.getLine()
-                                ));
-                            } catch (Exception e) {
-                                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                            }
+                            ));
                         }
                     } catch (NumberFormatException ignored) {
                     }
@@ -296,15 +277,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             
             // Vérifier si l'entier commence par 0 (sauf s'il est égal à 0)
             if (intValue.length() > 1 && intValue.charAt(0) == '0') {
-                try {
-                    addErrorAndCheck(new EMJError(
-                        "intStartsWithZero",
-                        "Integer value cannot start with 0: " + intValue,
-                        ctx.start.getLine()
-                    ));
-                } catch (Exception e) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                errorLogger.addError(new EMJError(
+                    "intStartsWithZero",
+                    "Integer value cannot start with 0: " + intValue,
+                    ctx.start.getLine()
+                ));
             }
             
             // Vérifier si l'entier est trop grand ou trop petit
@@ -313,37 +290,25 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                 // En Java, Integer.MAX_VALUE est 2^31-1 et Integer.MIN_VALUE est -2^31
                 // Mais nous pouvons définir nos propres limites pour le langage EMJ
                 if (value > 1000000000) { // 10^9 comme limite supérieure
-                    try {
-                        addErrorAndCheck(new EMJError(
-                            "integerTooBig",
-                            "Integer value too big: " + intValue,
-                            ctx.start.getLine()
-                        ));
-                    } catch (Exception e) {
-                        // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                    }
+                    errorLogger.addError(new EMJError(
+                        "integerTooBig",
+                        "Integer value too big: " + intValue,
+                        ctx.start.getLine()
+                    ));
                 } else if (value < -1000000000) { // -10^9 comme limite inférieure
-                    try {
-                        addErrorAndCheck(new EMJError(
-                            "integerTooSmall",
-                            "Integer value too small: " + intValue,
-                            ctx.start.getLine()
-                        ));
-                    } catch (Exception e) {
-                        // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                    }
+                    errorLogger.addError(new EMJError(
+                        "integerTooSmall",
+                        "Integer value too small: " + intValue,
+                        ctx.start.getLine()
+                    ));
                 }
             } catch (NumberFormatException e) {
                 // Si l'entier ne peut pas être parsé (trop grand pour un int Java)
-                try {
-                    addErrorAndCheck(new EMJError(
-                        "invalidIntegerFormat",
-                        "Invalid integer format: " + intValue,
-                        ctx.start.getLine()
-                    ));
-                } catch (Exception ex) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                errorLogger.addError(new EMJError(
+                    "invalidIntegerFormat",
+                    "Invalid integer format: " + intValue,
+                    ctx.start.getLine()
+                ));
             }
             
             return "INT";
@@ -360,15 +325,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             
             // Vérifier que les deux éléments ont le même type
             if (!elementType1.equals(elementType2)) {
-                try {
-                    addErrorAndCheck(new EMJError(
-                        "tupleMismatchedTypes",
-                        "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
-                        ctx.start.getLine()
-                    ));
-                } catch (Exception e) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                errorLogger.addError(new EMJError(
+                    "tupleMismatchedTypes",
+                    "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
+                    ctx.start.getLine()
+                ));
             }
             
             return "TUPLE(" + elementType1 + ")";
@@ -424,27 +385,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         int actualCellCount = ctx.mapCell().size();
 
         if (width < 2 || height < 2) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "mapTooSmall",
                     "The map must at least have a width >= 2 and a height >= 2 (current : " + width + "x" + height + ").",
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
 
         if (expectedCellCount != actualCellCount) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "mapDimensionsMismatch",
                     "The size given (" + width + "x" + height + " = " + expectedCellCount + " cells) don't match with the number of cells given (" + actualCellCount + ").",
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
 
 
@@ -462,39 +415,27 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         }
 
         if (policeCarCount != 1) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "mapPoliceCarCountInvalid",
                     "The map must contain exactly 1 Police Car, found : " + policeCarCount,
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
 
         if (thiefCount < 1) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "mapThiefMissing",
                     "The map must contain at least 1 Thief, found : " + thiefCount,
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
 
         if (roadCount < 1) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "mapRoadMissing",
                     "The map must contain at least 1 Road, found : " + roadCount,
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
 
         return null;
@@ -531,12 +472,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         // Vérifier si la fonction existe déjà
         if (symbolTable.functionExists(funcId)) {
-            try {
-                addErrorAndCheck(new EMJError("functionAlreadyDefined",
+            errorLogger.addError(new EMJError("functionAlreadyDefined",
                     "Function " + funcId + " is already defined", ctx.start.getLine()));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
             return null;
         }
 
@@ -608,26 +545,18 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         // If the variable id is not contained in the variable id array, add an error
         EMJSymbolInfo var = this.symbolTable.lookup(varId);
         if(var == null) {
-            try {
-                addErrorAndCheck(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
         }
 
         String exprType = getExpressionType(ctx.expression());
 
         if (!areTypesCompatible(var.getType(), exprType)) {
-            try {
-                addErrorAndCheck(new EMJError(
+            this.errorLogger.addError(new EMJError(
                     "typeMismatch",
                     "Cannot initialize variable of type '" + var.getType() +
                             "' with an expression of type '" + exprType + "'",
                     ctx.start.getLine()
-                ));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            ));
         }
         return null;
     }
@@ -644,11 +573,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         EMJSymbolInfo functionSymbol = symbolTable.lookup(functionName);
 
         if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
-            try {
-                addErrorAndCheck(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
-            } catch (Exception e) {
-                // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-            }
+            errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
             return "UNKNOWN";
         }
 
@@ -665,15 +590,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             
             if (isUsedInExpression) {
                 // Ajouter une erreur sémantique pour l'utilisation d'une fonction void dans une expression
-                try {
-                    addErrorAndCheck(new EMJError(
-                        "voidFunctionInExpression",
-                        "Function " + functionName + " has void return type and cannot be used in an expression",
-                        ctx.getStart().getLine()
-                    ));
-                } catch (Exception e) {
-                    // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                }
+                errorLogger.addError(new EMJError(
+                    "voidFunctionInExpression",
+                    "Function " + functionName + " has void return type and cannot be used in an expression",
+                    ctx.getStart().getLine()
+                ));
             }
         }
 
@@ -692,16 +613,12 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             if (functionSymbol.getParameters() != null && i < functionSymbol.getParameters().size()) {
                 String paramType = functionSymbol.getParameters().get(i).getType();
                 if (!areTypesCompatible(paramType, argType)) {
-                    try {
-                        addErrorAndCheck(new EMJError(
-                            "paramTypeMismatch",
-                            "Parameter " + (i+1) + " of function " + functionName + " expects type " + 
-                            paramType + " but got " + argType,
-                            ctx.getStart().getLine()
-                        ));
-                    } catch (Exception e) {
-                        // L'exception sera propagée jusqu'à main.compile() qui affichera "KO"
-                    }
+                    errorLogger.addError(new EMJError(
+                        "paramTypeMismatch",
+                        "Parameter " + (i+1) + " of function " + functionName + " expects type " + 
+                        paramType + " but got " + argType,
+                        ctx.getStart().getLine()
+                    ));
                 }
             }
         }
