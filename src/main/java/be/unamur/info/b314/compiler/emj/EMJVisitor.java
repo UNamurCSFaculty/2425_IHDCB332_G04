@@ -490,67 +490,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     @Override
-    public Object visitReturnStatement(EMJParser.ReturnStatementContext ctx) {
-        // Récupérer la fonction courante à partir de la portée actuelle
-        String currentFunction = getCurrentFunction();
-        if (currentFunction == null) {
-            // Retour en dehors d'une fonction
-            errorLogger.addError(new EMJError(
-                "returnOutsideFunction", 
-                "Return statement outside of function", 
-                ctx.start.getLine()
-            ));
-            return null;
-        }
-        
-        EMJSymbolInfo functionInfo = symbolTable.lookup(currentFunction);
-        String declaredReturnType = functionInfo.getReturnType();
-        
-        // Vérifier le type de retour
-        if (ctx.VOID_TYPE() != null || ctx.RETURN_VOID() != null || 
-            (ctx.RETURN() != null && ctx.expression() == null)) {
-            // Retour void
-            if (!"VOID".equals(declaredReturnType)) {
-                errorLogger.addError(new EMJError(
-                    "ReturnTypeDifferentFromDeclarationException", 
-                    "Function declared with return type " + declaredReturnType + 
-                    " but returns void", 
-                    ctx.start.getLine()
-                ));
-            }
-        } else if (ctx.expression() != null) {
-            // Retour avec expression
-            String exprType = (String) visit(ctx.expression());
-            if ("VOID".equals(declaredReturnType)) {
-                errorLogger.addError(new EMJError(
-                    "ReturnTypeDifferentFromDeclarationException", 
-                    "Void function cannot return a value", 
-                    ctx.start.getLine()
-                ));
-            } else if (!areTypesCompatible(declaredReturnType, exprType)) {
-                errorLogger.addError(new EMJError(
-                    "ReturnTypeDifferentFromDeclarationException", 
-                    "Function declared with return type " + declaredReturnType + 
-                    " but returns " + exprType, 
-                    ctx.start.getLine()
-                ));
-            }
-        }
-        
-        return null;
-    }
-    
-    private String getCurrentFunction() {
-        // Parcourir la portée actuelle pour trouver la fonction
-        String scope = symbolTable.getCurrentScope();
-        if (scope != null && scope.contains("function_")) {
-            int index = scope.indexOf("function_") + "function_".length();
-            return scope.substring(index).split("\\.")[0]; // Récupérer l'ID de la fonction
-        }
-        return null;
-    }
-
-    @Override
     public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) {
         String functionName = ctx.EMOJI_ID().getText(); // Retrieve the name of the called function
 
@@ -562,11 +501,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         EMJSymbolInfo functionSymbol = symbolTable.lookup(functionName);
 
         if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
-            errorLogger.addError(new EMJError(
-                "CallFunctionNotDeclaredException", 
-                "Function " + functionName + " is not declared", 
-                ctx.getStart().getLine()
-            ));
+            errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
             return null;
         }
 
