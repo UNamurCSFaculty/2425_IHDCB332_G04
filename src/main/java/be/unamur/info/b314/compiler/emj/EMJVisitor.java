@@ -167,7 +167,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
-        // On commence par le premier opérande
+        // Si pas d’opérateur, délègue simplement
+        if (ctx.PLUS().isEmpty() && ctx.MINUS().isEmpty()) {
+            return visit(ctx.multiplicativeExpression(0));
+        }
+
         Object leftObj = visit(ctx.multiplicativeExpression(0));
         String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
 
@@ -175,25 +179,39 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             Object rightObj = visit(ctx.multiplicativeExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
 
-            // Vérifie que les deux opérandes sont des entiers
+            // Ne déclenche pas d’erreur sur des types inconnus
+            if (leftType.equals("UNKNOWN") || rightType.equals("UNKNOWN")) {
+                return "UNKNOWN";
+            }
+
+            // Erreur sémantique si types invalides
             if (!leftType.equals("INT") || !rightType.equals("INT")) {
                 errorLogger.addError(new EMJError(
                         "invalidOperandType",
                         "Operands of '+' or '-' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
                 ));
+                return "UNKNOWN";
             }
 
-            // Pour les itérations suivantes
-            leftType = "INT";
+            leftType = "INT"; // Pour les opérations en chaîne
         }
 
         return "INT";
     }
 
 
+
+
+
+
     @Override
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
+        // Si pas d’opérateur, délègue simplement
+        if (ctx.MULTIPLY().isEmpty() && ctx.DIVIDE().isEmpty()) {
+            return visit(ctx.unaryExpression(0));
+        }
+
         Object leftObj = visit(ctx.unaryExpression(0));
         String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
 
@@ -201,17 +219,23 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             Object rightObj = visit(ctx.unaryExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
 
-            // Vérifie que les types sont bien INT
+            // Ne déclenche pas d’erreur sur des types inconnus
+            if (leftType.equals("UNKNOWN") || rightType.equals("UNKNOWN")) {
+                return "UNKNOWN";
+            }
+
+            // Erreur sémantique si types invalides
             if (!leftType.equals("INT") || !rightType.equals("INT")) {
                 errorLogger.addError(new EMJError(
                         "invalidOperandType",
                         "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
                 ));
+                return "UNKNOWN";
             }
 
-            // Vérifie la division par zéro uniquement si la valeur est littérale
-            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c’est un opérateur '/'
+            // Division par zéro (seulement si opérande littéral)
+            if (ctx.DIVIDE(i - 1) != null) {
                 EMJParser.UnaryExpressionContext rightExpr = ctx.unaryExpression(i);
                 if (rightExpr.primaryExpression() != null && rightExpr.primaryExpression().INT_VALUE() != null) {
                     String valueText = rightExpr.primaryExpression().INT_VALUE().getText();
@@ -223,17 +247,22 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                                     "Division by zero is not allowed.",
                                     ctx.start.getLine()
                             ));
+                            return "UNKNOWN";
                         }
                     } catch (NumberFormatException ignored) {
                     }
                 }
             }
 
-            leftType = "INT"; // continuer avec un type INT
+            leftType = "INT";
         }
 
         return "INT";
     }
+
+
+
+
 
     @Override
     public Object visitUnaryExpression(EMJParser.UnaryExpressionContext ctx) {
@@ -323,7 +352,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         if (expectedCellCount != actualCellCount) {
             this.errorLogger.addError(new EMJError(
                     "mapDimensionsMismatch",
-                    "The size given (" + width + "x" + height + " = " + expectedCellCount + " cells) don't match with the number of cells given (" + actualCellCount + ").",
+                    "The size given (" + width + "x" + height + " = " + expectedCellCount + " cells) don't match with the number of cells given (" + actualCellCount + ".)",
                     ctx.start.getLine()
             ));
         }
