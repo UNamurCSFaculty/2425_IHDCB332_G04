@@ -57,4 +57,32 @@ public class EMJExpressionsTest {
                 "Expressions: Complex expressions test"
         );
     }
+
+    /* KO tests: should not pass */
+    @Test
+    public void invalid_operand_should_fail() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/05_expressions/ko/math_operations_not_okay.moj",
+                testFolder.newFile(),
+                false, // false car ce test doit échouer (KO attendu)
+                "Expressions: Invalid operand in arithmetic expression"
+        );
+    }
+
+    @Test
+    public void division_by_zero_should_fail() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/05_expressions/ko/math_division_by_0_error.moj",
+                testFolder.newFile(),
+                false, // false car KO attendu
+                "Expressions: Division by zero test"
+        );
+    }
+
+
+
+
+
 }
+
+

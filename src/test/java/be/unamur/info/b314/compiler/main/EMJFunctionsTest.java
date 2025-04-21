@@ -62,6 +62,16 @@ public class EMJFunctionsTest {
         );
     }
 
+    @Test
+    public void test_ok_parameter_call_exact_match() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ok/exact_params.moj",
+                testFolder.newFile(),
+                true,
+                "Should succeed: function call with correct number of parameters"
+        );
+    }
+
     /* KO tests: should fail */
 
     @Test
@@ -71,6 +81,26 @@ public class EMJFunctionsTest {
                 testFolder.newFile(),
                 false,
                 "Functions: Function without explicit return should fail"
+        );
+    }
+
+    @Test
+    public void test_ko_parameter_call_less_than_declared() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/less_params.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: function call with too few parameters"
+        );
+    }
+
+    @Test
+    public void test_ko_parameter_call_more_than_declared() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/more_params.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: function call with too many parameters"
         );
     }
 }
