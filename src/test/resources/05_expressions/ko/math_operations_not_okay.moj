@@ -1,0 +1,8 @@
+//On essaye d'initialiser un bool + int dans un bool
+
+📦 "test.map"
+
+🌀 🏠() {
+    🔟 [🦅] = ✅ + 3;
+    ↩️🌀;
+}
