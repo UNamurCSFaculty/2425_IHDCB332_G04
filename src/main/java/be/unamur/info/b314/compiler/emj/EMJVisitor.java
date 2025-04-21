@@ -6,7 +6,6 @@ import be.unamur.info.b314.compiler.emj.EMJError;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -17,8 +16,8 @@ Visitor class for the EMJ language, extending the base visitor class generated b
 */
 public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisitor<Object> {
 
-    private final EMJErrorLogger errorLogger;
-    private final EMJSymbolTable symbolTable;
+    private EMJErrorLogger errorLogger;
+    private EMJSymbolTable symbolTable;
 
     public EMJVisitor() {
         this.errorLogger = new EMJErrorLogger();
@@ -48,60 +47,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         boolean isInitialized = ctx.expression() != null;
         this.symbolTable.addVariable(varId, varType, isInitialized);
         // Need to check type compatibility
-        if (isInitialized) {
-            // Visit the expression to determine its type
-            String exprType = getExpressionType(ctx.expression());
-
-            if (!areTypesCompatible(varType, exprType)) {
-                this.errorLogger.addError(new EMJError(
-                        "typeMismatch",
-                        "Cannot initialize variable of type '" + varType +
-                                "' with an expression of type '" + exprType + "'",
-                        ctx.start.getLine()
-                ));
-            }
-        }
 
         return null;
-    }
-
-    private boolean areTypesCompatible(String declaredType, String exprType) {
-        // Si l'un des types est inconnu, considérer comme incompatible
-        if (declaredType == null || exprType == null || "UNKNOWN".equals(declaredType) || "UNKNOWN".equals(exprType)) {
-            return false;
-        }
-        
-        // Direct match
-        if (declaredType.equals(exprType)) {
-            return true;
-        }
-
-        // Tuple compatibility
-        if (declaredType.startsWith("TUPLE(") && exprType.startsWith("TUPLE(")) {
-            String innerDeclaredType = declaredType.substring(6, declaredType.length() - 1);
-            String innerExprType = exprType.substring(6, exprType.length() - 1);
-            return areTypesCompatible(innerDeclaredType, innerExprType);
-        }
-        
-        // Vérifier explicitement les incompatibilités courantes
-        if ("INT".equals(declaredType) && ("STRING".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("STRING".equals(declaredType) && ("INT".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("BOOL".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("CHAR".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "BOOL".equals(exprType))) {
-            return false;
-        }
-
-        // Si on arrive ici, les types sont considérés comme incompatibles
-        return false;
     }
 
     private String getTypeFromContext(EMJParser.TypeContext typeCtx) {
@@ -113,267 +60,12 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return "CHAR";
         } else if (typeCtx.STRING_TYPE() != null) {
             return "STRING";
-        }else if (typeCtx.tupleType() != null) {
-            // It's a tuple - get the inner type
-            EMJParser.TupleTypeContext tupleCtx = typeCtx.tupleType();
-            String innerType = getTypeFromContext(tupleCtx.type());
-            return "TUPLE(" + innerType + ")";
         }
 
         return "UNKNOWN";
     }
 
-    private String getExpressionType(EMJParser.ExpressionContext ctx) {
-        // Visiter l'expression et récupérer le résultat
-        Object result = visit(ctx);
 
-        // Convertir le résultat en type
-        if (result instanceof String) {
-            return (String) result;
-        }
-
-        return "UNKNOWN";
-    }
-
-    // Override des méthodes de visite pour chaque type d'expression
-    @Override
-    public Object visitExpression(EMJParser.ExpressionContext ctx) {
-        // Déléguer à la méthode de visite pour orExpression
-        return visit(ctx.orExpression());
-    }
-
-    @Override
-    public Object visitOrExpression(EMJParser.OrExpressionContext ctx) {
-        // S'il y a plus d'une andExpression connectée par OR, c'est un booléen
-        if (!ctx.OR().isEmpty()) {
-            return "BOOL";
-        }
-
-        // Sinon, déléguer au premier andExpression
-        return visit(ctx.andExpression(0));
-    }
-
-    @Override
-    public Object visitAndExpression(EMJParser.AndExpressionContext ctx) {
-        // S'il y a plus d'une notExpression connectée par AND, c'est un booléen
-        if (!ctx.AND().isEmpty()) {
-            return "BOOL";
-        }
-
-        // Sinon, déléguer au premier notExpression
-        return visit(ctx.notExpression(0));
-    }
-
-    @Override
-    public Object visitNotExpression(EMJParser.NotExpressionContext ctx) {
-        // S'il y a un NOT, c'est un booléen
-        if (ctx.NOT() != null) {
-            return "BOOL";
-        }
-
-        // Sinon, déléguer à comparisonExpression
-        return visit(ctx.comparisonExpression());
-    }
-
-    @Override
-    public Object visitComparisonExpression(EMJParser.ComparisonExpressionContext ctx) {
-        // S'il y a un opérateur de comparaison, c'est un booléen
-        if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null ||
-                ctx.LESS() != null || ctx.LEQ() != null ||
-                ctx.GREATER() != null || ctx.GEQ() != null) {
-            return "BOOL";
-        }
-
-        // Sinon, déléguer au premier additiveExpression
-        return visit(ctx.additiveExpression(0));
-    }
-
-    @Override
-    public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
-        // On commence par le premier opérande
-        Object leftObj = visit(ctx.multiplicativeExpression(0));
-        String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
-
-        for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
-            Object rightObj = visit(ctx.multiplicativeExpression(i));
-            String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
-
-            // Vérifie que les deux opérandes sont des entiers
-            if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                errorLogger.addError(new EMJError(
-                        "invalidOperandType",
-                        "Operands of '+' or '-' must be of type INT, found: " + leftType + " and " + rightType,
-                        ctx.start.getLine()
-                ));
-            }
-
-            // Pour les itérations suivantes
-            leftType = "INT";
-        }
-
-        return "INT";
-    }
-
-
-    @Override
-    public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
-        Object leftObj = visit(ctx.unaryExpression(0));
-        String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
-
-        for (int i = 1; i < ctx.unaryExpression().size(); i++) {
-            Object rightObj = visit(ctx.unaryExpression(i));
-            String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
-
-            // Vérifie que les types sont bien INT
-            if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                errorLogger.addError(new EMJError(
-                        "invalidOperandType",
-                        "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
-                        ctx.start.getLine()
-                ));
-            }
-
-            // Vérifie la division par zéro uniquement si la valeur est littérale
-            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c’est un opérateur '/'
-                EMJParser.UnaryExpressionContext rightExpr = ctx.unaryExpression(i);
-                if (rightExpr.primaryExpression() != null && rightExpr.primaryExpression().INT_VALUE() != null) {
-                    String valueText = rightExpr.primaryExpression().INT_VALUE().getText();
-                    try {
-                        int val = Integer.parseInt(valueText);
-                        if (val == 0) {
-                            errorLogger.addError(new EMJError(
-                                    "divisionByZero",
-                                    "Division by zero is not allowed.",
-                                    ctx.start.getLine()
-                            ));
-                        }
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-            }
-
-            leftType = "INT"; // continuer avec un type INT
-        }
-
-        return "INT";
-    }
-
-    @Override
-    public Object visitUnaryExpression(EMJParser.UnaryExpressionContext ctx) {
-        // S'il y a un - unaire, c'est un entier
-        if (ctx.MINUS() != null) {
-            return "INT";
-        }
-
-        // Sinon, déléguer à primaryExpression
-        return visit(ctx.primaryExpression());
-    }
-
-    @Override
-    public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
-        // Déterminer le type en fonction du contenu
-        if (ctx.INT_VALUE() != null) {
-            String intValue = ctx.INT_VALUE().getText();
-            
-            // Vérifier si l'entier commence par 0 (sauf s'il est égal à 0)
-            if (intValue.length() > 1 && intValue.charAt(0) == '0') {
-                errorLogger.addError(new EMJError(
-                    "intStartsWithZero",
-                    "Integer value cannot start with 0: " + intValue,
-                    ctx.start.getLine()
-                ));
-            }
-            
-            // Vérifier si l'entier est trop grand ou trop petit
-            try {
-                int value = Integer.parseInt(intValue);
-                // En Java, Integer.MAX_VALUE est 2^31-1 et Integer.MIN_VALUE est -2^31
-                // Mais nous pouvons définir nos propres limites pour le langage EMJ
-                if (value > 1000000000) { // 10^9 comme limite supérieure
-                    errorLogger.addError(new EMJError(
-                        "integerTooBig",
-                        "Integer value too big: " + intValue,
-                        ctx.start.getLine()
-                    ));
-                } else if (value < -1000000000) { // -10^9 comme limite inférieure
-                    errorLogger.addError(new EMJError(
-                        "integerTooSmall",
-                        "Integer value too small: " + intValue,
-                        ctx.start.getLine()
-                    ));
-                }
-            } catch (NumberFormatException e) {
-                // Si l'entier ne peut pas être parsé (trop grand pour un int Java)
-                errorLogger.addError(new EMJError(
-                    "invalidIntegerFormat",
-                    "Invalid integer format: " + intValue,
-                    ctx.start.getLine()
-                ));
-            }
-            
-            return "INT";
-        } else if (ctx.STRING_VALUE() != null) {
-            return "STRING";
-        } else if (ctx.CHAR_VALUE() != null) {
-            return "CHAR";
-        } else if (ctx.TRUE() != null || ctx.FALSE() != null) {
-            return "BOOL";
-        } else if (ctx.tupleValue() != null) {
-            // Pour les tuples, il faut obtenir le type des éléments
-            String elementType1 = (String) visit(ctx.tupleValue().expression(0));
-            String elementType2 = (String) visit(ctx.tupleValue().expression(1));
-            
-            // Vérifier que les deux éléments ont le même type
-            if (!elementType1.equals(elementType2)) {
-                errorLogger.addError(new EMJError(
-                    "tupleMismatchedTypes",
-                    "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
-                    ctx.start.getLine()
-                ));
-            }
-            
-            return "TUPLE(" + elementType1 + ")";
-        } else if (ctx.EMOJI_ID() != null) {
-            // Pour les variables, consulter la table des symboles
-            String varId = ctx.EMOJI_ID().getText();
-            EMJSymbolInfo info = symbolTable.lookup(varId);
-            return info != null ? info.getType() : "UNKNOWN";
-        } else if (ctx.functionCall() != null) {
-            // Pour les appels de fonction, consulter la table des symboles
-            String funcId = ctx.functionCall().EMOJI_ID().getText();
-            EMJSymbolInfo funcInfo = symbolTable.lookup(funcId);
-            return funcInfo != null ? funcInfo.getReturnType() : "UNKNOWN";
-        } else if (ctx.leftExpression() != null) {
-            // Pour les expressions gauches, utiliser une méthode auxiliaire
-            return getLeftExpressionType(ctx.leftExpression());
-        } else if (ctx.expression() != null) {
-            // Pour les expressions entre parenthèses, visiter récursivement
-            return visit(ctx.expression());
-        }
-
-        return "UNKNOWN";
-    }
-
-    // Méthode auxiliaire pour obtenir le type d'une expression gauche
-    private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
-        String varId = ctx.EMOJI_ID().getText();
-        EMJSymbolInfo info = symbolTable.lookup(varId);
-
-        if (info == null) {
-            return "UNKNOWN";
-        }
-
-        // Vérifier s'il s'agit d'un accès à un élément de tuple
-        if (ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null) {
-            String type = info.getType();
-            if (type.startsWith("TUPLE(") && type.endsWith(")")) {
-                return type.substring(6, type.length() - 1);
-            }
-            return "UNKNOWN"; // Pas un tuple
-        }
-
-        return info.getType();
-    }
     @Override
     public Object visitMapFile(EMJParser.MapFileContext ctx) {
         int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
@@ -453,60 +145,12 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
-        // Récupérer l'identifiant de la fonction
-        String funcId = ctx.EMOJI_ID().getText();
 
-        // Récupérer le type de retour
-        String returnType = getTypeFromContext(ctx.returnType());
-
-        // Récupérer les paramètres
-        List<EMJParameterInfo> parameters = new ArrayList<>();
-        if (ctx.optionalParamList() != null && ctx.optionalParamList().paramList() != null) {
-            EMJParser.ParamListContext paramListCtx = ctx.optionalParamList().paramList();
-            for (EMJParser.ParamContext paramCtx : paramListCtx.param()) {
-                String paramId = paramCtx.EMOJI_ID().getText();
-                String paramType = getTypeFromContext(paramCtx.type());
-                parameters.add(new EMJParameterInfo(paramId, paramType));
-            }
-        }
-
-        // Vérifier si la fonction existe déjà
-        if (symbolTable.functionExists(funcId)) {
-            errorLogger.addError(new EMJError("functionAlreadyDefined",
-                    "Function " + funcId + " is already defined", ctx.start.getLine()));
-            return null;
-        }
-
-        // Ajouter la fonction à la table des symboles
-        symbolTable.addFunction(funcId, returnType, parameters);
-
-        // Entrer dans la portée de la fonction
-        symbolTable.enterScope("function_" + funcId);
-
-        // Ajouter les paramètres dans la portée de la fonction
-        for (EMJParameterInfo param : parameters) {
-            symbolTable.addVariable(param.getId(), param.getType(), true);
-        }
-
-        // Visiter le corps de la fonction
+        symbolTable.enterScope("function");
         Object result = visitChildren(ctx);
-
-        // Sortir de la portée de la fonction
         symbolTable.exitScope();
-
         return result;
     }
-
-    // Méthode auxiliaire pour obtenir le type à partir d'un contexte de type
-    private String getTypeFromContext(EMJParser.ReturnTypeContext ctx) {
-        if (ctx.VOID_TYPE() != null) {
-            return "VOID";
-        } else if (ctx.type() != null) {
-            return getTypeFromContext(ctx.type());
-        }
-        return "UNKNOWN";
-    }
-
 
     @Override
     public Object visitLoopStatement(EMJParser.LoopStatementContext ctx) {
@@ -543,87 +187,10 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         String varId = ctx.leftExpression().EMOJI_ID().getText();
 
         // If the variable id is not contained in the variable id array, add an error
-        EMJSymbolInfo var = this.symbolTable.lookup(varId);
-        if(var == null) {
+        if(this.symbolTable.lookup(varId) != null) {
             this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
         }
 
-        String exprType = getExpressionType(ctx.expression());
-
-        if (!areTypesCompatible(var.getType(), exprType)) {
-            this.errorLogger.addError(new EMJError(
-                    "typeMismatch",
-                    "Cannot initialize variable of type '" + var.getType() +
-                            "' with an expression of type '" + exprType + "'",
-                    ctx.start.getLine()
-            ));
-        }
         return null;
-    }
-
-    @Override
-    public Object visitFunctionCall(EMJParser.FunctionCallContext ctx) {
-        String functionName = ctx.EMOJI_ID().getText(); // Retrieve the name of the called function
-
-        // Retrieve the number of arguments passed to the function call
-        List<EMJParser.ExpressionContext> args =
-                ctx.argumentList() != null ? ctx.argumentList().expression() : new ArrayList<>();
-
-        // Retrieve the function definition from the symbol table
-        EMJSymbolInfo functionSymbol = symbolTable.lookup(functionName);
-
-        if (functionSymbol == null || functionSymbol.getSymbolType() != EMJSymbolType.FUNCTION) {
-            errorLogger.addError(new EMJError("Function not declared", functionName, ctx.getStart().getLine()));
-            return "UNKNOWN";
-        }
-
-        // Vérifier si la fonction est de type void et si elle est appelée dans une expression
-        if ("VOID".equals(functionSymbol.getReturnType())) {
-            // Pour les fonctions void, vérifier si elles sont utilisées dans une expression
-            // Nous considérons tout contexte autre qu'une instruction directe comme une expression
-            boolean isUsedInExpression = true; // Par défaut, considérer comme utilisé dans une expression
-            
-            // Vérifier si l'appel est directement dans une instruction (statement)
-            if (ctx.getParent() instanceof EMJParser.StatementContext) {
-                isUsedInExpression = false;
-            }
-            
-            if (isUsedInExpression) {
-                // Ajouter une erreur sémantique pour l'utilisation d'une fonction void dans une expression
-                errorLogger.addError(new EMJError(
-                    "voidFunctionInExpression",
-                    "Function " + functionName + " has void return type and cannot be used in an expression",
-                    ctx.getStart().getLine()
-                ));
-            }
-        }
-
-        int expected = functionSymbol.getParameters() != null ? functionSymbol.getParameters().size() : 0;
-        int actual = args.size();
-
-        if (actual < expected) {
-            errorLogger.addError(new EMJError("Too few parameters", functionName, ctx.getStart().getLine()));
-        } else if (actual > expected) {
-            errorLogger.addError(new EMJError("Too many parameters", functionName, ctx.getStart().getLine()));
-        }
-
-        // Visit each argument expression to perform semantic checks
-        for (int i = 0; i < Math.min(actual, expected); i++) {
-            String argType = (String) visit(args.get(i));
-            if (functionSymbol.getParameters() != null && i < functionSymbol.getParameters().size()) {
-                String paramType = functionSymbol.getParameters().get(i).getType();
-                if (!areTypesCompatible(paramType, argType)) {
-                    errorLogger.addError(new EMJError(
-                        "paramTypeMismatch",
-                        "Parameter " + (i+1) + " of function " + functionName + " expects type " + 
-                        paramType + " but got " + argType,
-                        ctx.getStart().getLine()
-                    ));
-                }
-            }
-        }
-
-        // Return the function's return type
-        return functionSymbol.getReturnType();
     }
 }
