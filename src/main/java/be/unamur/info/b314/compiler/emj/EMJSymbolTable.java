@@ -68,22 +68,4 @@ public class EMJSymbolTable {
         }
         return null;
     }
-
-    public void addFunction(String id, String returnType, List<EMJParameterInfo> parameters) {
-        // Utiliser la portée globale pour les fonctions
-        String fullId = "global:" + id;
-
-        EMJSymbolInfo info = new EMJSymbolInfo(id, null,  fullId ,EMJSymbolType.FUNCTION, true);
-        info.SetReturnType(returnType);
-        info.SetParameters(parameters);
-
-        symbols.put(fullId, info);
-        scopeSymbols.get("global").add(fullId);
-    }
-
-    public boolean functionExists(String id) {
-        String fullId = "global:" + id;
-        EMJSymbolInfo info = symbols.get(fullId);
-        return info != null && info.getType() == EMJSymbolType.FUNCTION.toString();
-    }
 }
