@@ -37,6 +37,8 @@ public class EMJDataTypesTest {
     }
 
 
+
+
     /* OK tests: should pass */
 
     @Test
@@ -109,4 +111,17 @@ public class EMJDataTypesTest {
         );
     }
 
+    @Test
+    public void test_ko_variable_tuple_invalid_affect_decl() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/03_data_types/ko/tuple_invalid_affect_decl.moj",
+                testFolder.newFile(),
+                false,
+                "Semantic: Tuple element access on non-tuple variable"
+        );
+    }
+
+
 }
+
+

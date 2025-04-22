@@ -392,20 +392,34 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         EMJSymbolInfo info = symbolTable.lookup(varId);
 
         if (info == null) {
+            errorLogger.addError(new EMJError(
+                    "varNotDeclared",
+                    "Variable " + varId + " is not declared",
+                    ctx.getStart().getLine()
+            ));
             return "UNKNOWN";
         }
 
-        // Vérifier s'il s'agit d'un accès à un élément de tuple
+        String type = info.getType();
+
+        // Si l'expression tente d'accéder à .0️ ou .1️
         if (ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null) {
-            String type = info.getType();
             if (type.startsWith("TUPLE(") && type.endsWith(")")) {
+                // Renvoyer le type interne du tuple
                 return type.substring(6, type.length() - 1);
+            } else {
+                errorLogger.addError(new EMJError(
+                        "invalidTupleAccess",
+                        "Trying to access an element of non-tuple variable '" + varId + "'",
+                        ctx.getStart().getLine()
+                ));
+                return "UNKNOWN";
             }
-            return "UNKNOWN"; // Pas un tuple
         }
 
-        return info.getType();
+        return type;
     }
+
     @Override
     public Object visitMapFile(EMJParser.MapFileContext ctx) {
         int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
