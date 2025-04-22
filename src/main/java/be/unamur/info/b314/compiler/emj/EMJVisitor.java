@@ -428,33 +428,67 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
     // Méthode auxiliaire pour obtenir le type d'une expression gauche
+//    private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
+//        String varId = ctx.EMOJI_ID().getText();
+//        EMJSymbolInfo info = symbolTable.lookup(varId);
+//
+//        if (info == null) {
+//            return "UNKNOWN";
+//        }
+//
+//        // Si on tente d’accéder à un élément tuple, mais que la variable n’est pas un tuple
+//        if ((ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null)) {
+//            String type = info.getType();
+//            if (!type.startsWith("TUPLE(")) {
+//                errorLogger.addError(new EMJError(
+//                        "invalidTupleAccess",
+//                        "Trying to access an element of non-tuple variable '" + varId + "'",
+//                        ctx.getStart().getLine()
+//                ));
+//                return "UNKNOWN";
+//            }
+//
+//            // Retourner le type interne du tuple
+//            return type.substring(6, type.length() - 1);
+//        }
+//
+//        return info.getType();
+//    }
+
+
+    // Méthode auxiliaire pour obtenir le type d'une expression gauche
     private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
         String varId = ctx.EMOJI_ID().getText();
         EMJSymbolInfo info = symbolTable.lookup(varId);
 
         if (info == null) {
+            errorLogger.addError(new EMJError(
+                    "undeclaredVariable",
+                    "Variable '" + varId + "' is not declared",
+                    ctx.getStart().getLine()
+            ));
             return "UNKNOWN";
         }
 
-        // Si on tente d’accéder à un élément tuple, mais que la variable n’est pas un tuple
-        if ((ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null)) {
-            String type = info.getType();
-            if (!type.startsWith("TUPLE(")) {
+        String varType = info.getType();
+
+        // Si on accède à un élément d'un tuple
+        if (ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null) {
+            if (!varType.startsWith("TUPLE(")) {
                 errorLogger.addError(new EMJError(
                         "invalidTupleAccess",
-                        "Trying to access an element of non-tuple variable '" + varId + "'",
+                        "Cannot access tuple element from non-tuple variable '" + varId + "'",
                         ctx.getStart().getLine()
                 ));
                 return "UNKNOWN";
             }
 
-            // Retourner le type interne du tuple
-            return type.substring(6, type.length() - 1);
+            // Extraire le type interne du tuple (ce qui est entre parenthèses)
+            return varType.substring(6, varType.length() - 1);
         }
 
-        return info.getType();
+        return varType;
     }
-
 
 
 
