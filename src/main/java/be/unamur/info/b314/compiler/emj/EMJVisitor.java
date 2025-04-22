@@ -38,6 +38,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
             visitFunctionDecl(functionDeclContext);
         }
+        visit(ctx.mainFunction());
         return null;
     }
     @Override
