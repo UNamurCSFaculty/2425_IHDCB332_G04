@@ -69,50 +69,34 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     private boolean areTypesCompatible(String declaredType, String exprType) {
-        // Si l'un des types est inconnu, considérer comme incompatible
         if (declaredType == null || exprType == null || "UNKNOWN".equals(declaredType) || "UNKNOWN".equals(exprType)) {
             return false;
         }
-        
-        // Direct match
+
         if (declaredType.equals(exprType)) {
             return true;
         }
 
-        // Tuple compatibility
         if (declaredType.startsWith("TUPLE(") && exprType.startsWith("TUPLE(")) {
-            String innerDeclaredType = declaredType.substring(6, declaredType.length() - 1);
-            String innerExprType = exprType.substring(6, exprType.length() - 1);
-            return areTypesCompatible(innerDeclaredType, innerExprType);
+            String[] declaredTypes = declaredType.substring(6, declaredType.length() - 1).split(",");
+            String[] exprTypes = exprType.substring(6, exprType.length() - 1).split(",");
+
+            if (declaredTypes.length != exprTypes.length) {
+                return false;
+            }
+
+            for (int i = 0; i < declaredTypes.length; i++) {
+                if (!areTypesCompatible(declaredTypes[i].trim(), exprTypes[i].trim())) {
+                    return false;
+                }
+            }
+            return true;
         }
 
-        // Accès à un élément de tuple - le type interne du tuple doit correspondre au type déclaré
-        if (declaredType.startsWith("TUPLE(")) {
-            String innerExprType = declaredType.substring(6, declaredType.length() - 1);
-            return areTypesCompatible(exprType, innerExprType);
-        }
-
-
-        // Vérifier explicitement les incompatibilités courantes
-        if ("INT".equals(declaredType) && ("STRING".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("STRING".equals(declaredType) && ("INT".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("BOOL".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "CHAR".equals(exprType))) {
-            return false;
-        }
-        
-        if ("CHAR".equals(declaredType) && ("INT".equals(exprType) || "STRING".equals(exprType) || "BOOL".equals(exprType))) {
-            return false;
-        }
-
-        // Si on arrive ici, les types sont considérés comme incompatibles
+        // Pas de conversion implicite : types différents sont incompatibles
         return false;
     }
+
 
     /**
      * Vérifie si les types sont compatibles pour une opération de comparaison
@@ -160,15 +144,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return "CHAR";
         } else if (typeCtx.STRING_TYPE() != null) {
             return "STRING";
-        }else if (typeCtx.tupleType() != null) {
-            // It's a tuple - get the inner type
+        } else if (typeCtx.tupleType() != null) {
             EMJParser.TupleTypeContext tupleCtx = typeCtx.tupleType();
             String innerType = getTypeFromContext(tupleCtx.type());
             return "TUPLE(" + innerType + ")";
         }
-
         return "UNKNOWN";
     }
+
+
 
     private String getExpressionType(EMJParser.ExpressionContext ctx) {
         // Visiter l'expression et récupérer le résultat
@@ -468,6 +452,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         return info.getType();
     }
+
+
 
 
     @Override
