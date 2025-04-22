@@ -681,40 +681,33 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitAssignment(EMJParser.AssignmentContext ctx) {
-        // SEMANTIC_CHECK_VAR_IS_DECL : Check if an id in a variable affectation has been previously declared
+        // 1. la variable référencée doit exister
         String varId = ctx.leftExpression().EMOJI_ID().getText();
-
-        // If the variable id is not contained in the variable id array, add an error
-        EMJSymbolInfo leftVar = this.symbolTable.lookup(varId);
-        if (leftVar == null) {
-            this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
+        EMJSymbolInfo varInfo = symbolTable.lookup(varId);
+        if (varInfo == null) {
+            errorLogger.addError(new EMJError(
+                    "varIdNotDecl",
+                    ctx.getText(),
+                    ctx.start.getLine()));
             return null;
         }
 
-        // Analyser l'expression de droite
-        EMJParser.ExpressionContext exprCtx = ctx.expression();
+        // 2. type réel du côté gauche (variable complète ou élément de tuple)
+        String leftType  = getLeftExpressionType(ctx.leftExpression());
+        // 3. type de l’expression de droite
+        String rightType = getExpressionType(ctx.expression());
 
-        // Vérifier pour le cas spécifique où on essaie d'accéder à un élément de tuple de manière incorrecte
-        if (exprCtx.getText().matches(".*[😍]\\d+.*")) {
-            this.errorLogger.addError(new EMJError(
-                    "invalidTupleAccess",
-                    "Invalid tuple access syntax in assignment: " + exprCtx.getText(),
-                    ctx.start.getLine()
-            ));
-            return null;
-        }
-
-        String exprType = getExpressionType(exprCtx);
-
-        // Vérifier la compatibilité des types
-        if (!areTypesCompatible(leftVar.getType(), exprType)) {
-            this.errorLogger.addError(new EMJError(
+        // 4. compatibilité de types
+        if (!areTypesCompatible(leftType, rightType)) {
+            errorLogger.addError(new EMJError(
                     "typeMismatch",
-                    "Cannot assign variable of type '" + leftVar.getType() +
-                            "' with an expression of type '" + exprType + "'",
-                    ctx.start.getLine()
-            ));
+                    "Cannot assign value of type '" + rightType +
+                            "' to target of type '" + leftType + "'",
+                    ctx.start.getLine()));
         }
+
+        // (optionnel) marquer la variable comme initialisée
+        //varInfo.setInitialized(true);
 
         return null;
     }
