@@ -4,9 +4,9 @@
     🔡 [🦅] = "test";
     🔢 [👌] = 8542;
     
-    📢 Test d'une opération directe avec des types incompatibles
-    📢 Cela devrait échouer car on divise une chaîne par un entier
-    🔢 [😍] = [🦅] / 78;
+    📢 Test d'une comparaison directe entre types incompatibles
+    📢 Cela devrait échouer car on compare une chaîne avec un entier
+    🔟 [😍] = [🦅] == [👌];
     
     ↩️🌀;
 }
