@@ -33,9 +33,35 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
             visitFunctionDecl(functionDeclContext);
         }
+
+        for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
+            if (!checkDeclaration(functionDeclContext)){
+                return null;
+            }
+        }
+
         visit(ctx.mainFunction());
         return null;
     }
+
+    private boolean checkDeclaration(EMJParser.FunctionDeclContext ctx) {
+        EMJSymbolInfo declaredInfo = symbolTable.lookup(ctx.EMOJI_ID().getText());
+        symbolTable.enterScope("function_" + declaredInfo.getId());
+        String expectedReturn = declaredInfo.getReturnType();
+        String actualReturn;
+        if (ctx.returnStatement().VOID_TYPE() != null) {
+            actualReturn = "VOID";
+        } else {
+            actualReturn = getExpressionType(ctx.returnStatement().expression());
+        }
+        symbolTable.exitScope();
+        if (!expectedReturn.equals(actualReturn)) {
+            errorLogger.addError(new EMJError(String.format("Function %s returns %s instead of %s .", declaredInfo.getId(), actualReturn, expectedReturn), ctx.getText(), ctx.start.getLine()));
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
 
@@ -135,7 +161,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     private String getExpressionType(EMJParser.ExpressionContext ctx) {
         // Visiter l'expression et récupérer le résultat
-        Object result = visit(ctx);
+        Object result = visitExpression(ctx);
 
         // Convertir le résultat en type
         if (result instanceof String) {
@@ -212,8 +238,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return visit(ctx.additiveExpression(0));
     }
 
-
-
     @Override
     public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
         // On commence par le premier opérande
@@ -243,7 +267,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         return "INT";
     }
-
 
     @Override
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
@@ -414,7 +437,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return info.getType();
     }
 
-
     @Override
     public Object visitMapFile(EMJParser.MapFileContext ctx) {
         int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
@@ -481,7 +503,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         return null;
     }
-
 
     @Override
     public Object visitMainFunction(EMJParser.MainFunctionContext ctx) {
