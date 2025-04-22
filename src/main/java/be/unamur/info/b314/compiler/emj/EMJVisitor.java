@@ -38,27 +38,35 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
     @Override
     public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
+
+        // SEMANTIC_CHECK_VAR_ID_ALREADY_EXISTS : Check if the id in the variable declaration does not exist yet
         String varId = ctx.EMOJI_ID().getText();
+
+        // If variable id already exist in variables throw an error
+        if(this.symbolTable.lookup(varId) != null) {
+            this.errorLogger.addError(new EMJError("varIdAlreadyExists", ctx.getText(), ctx.start.getLine()));
+        }
+
         String varType = getTypeFromContext(ctx.type());
-
         boolean isInitialized = ctx.expression() != null;
-
+        this.symbolTable.addVariable(varId, varType, isInitialized);
+        // Need to check type compatibility
         if (isInitialized) {
+            // Visit the expression to determine its type
             String exprType = getExpressionType(ctx.expression());
 
             if (!areTypesCompatible(varType, exprType)) {
-                errorLogger.addError(new EMJError(
+                this.errorLogger.addError(new EMJError(
                         "typeMismatch",
-                        "Cannot initialize variable of type '" + varType + "' with expression type '" + exprType + "'",
+                        "Cannot initialize variable of type '" + varType +
+                                "' with an expression of type '" + exprType + "'",
                         ctx.start.getLine()
                 ));
             }
         }
 
-        symbolTable.addVariable(varId, varType, isInitialized);
         return null;
     }
-
 
     private boolean areTypesCompatible(String declaredType, String exprType) {
         if (declaredType == null || exprType == null || "UNKNOWN".equals(declaredType) || "UNKNOWN".equals(exprType)) {
@@ -69,18 +77,14 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return true;
         }
 
-        // Handle tuples clearly
         if (declaredType.startsWith("TUPLE(") && exprType.startsWith("TUPLE(")) {
-            String innerDeclaredType = declaredType.substring(6, declaredType.length() - 1).trim();
-            String innerExprType = exprType.substring(6, exprType.length() - 1).trim();
-
-            // Ensure inner types match exactly
-            return areTypesCompatible(innerDeclaredType, innerExprType);
+            String declaredInner = declaredType.substring(6, declaredType.length() - 1).trim();
+            String exprInner = exprType.substring(6, exprType.length() - 1).trim();
+            return areTypesCompatible(declaredInner, exprInner);
         }
 
         return false;
     }
-
 
 
 
@@ -202,11 +206,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String leftType = (String) visit(ctx.additiveExpression(0));
             String rightType = (String) visit(ctx.additiveExpression(1));
 
-            // Vérifier si l'un des opérandes a déjà une erreur (UNKNOWN)
-            if ("UNKNOWN".equals(leftType) || "UNKNOWN".equals(rightType)) {
-                return "UNKNOWN";
-            }
-
             // Vérifier la compatibilité des types pour l'opération de comparaison
             if (!areComparisonTypesCompatible(leftType, rightType, ctx)) {
                 // Ajouter une erreur sémantique si les types sont incompatibles
@@ -215,10 +214,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     "Cannot compare values of incompatible types: '" + leftType + "' and '" + rightType + "'",
                     ctx.start.getLine()
                 ));
-                
-                // Retourner UNKNOWN au lieu de BOOL pour propager l'erreur
-                // Ceci force l'arrêt de la compilation avec une erreur
-                return "UNKNOWN";
             }
 
             return "BOOL";
@@ -337,11 +332,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
-        // Integer literal
+        // Déterminer le type en fonction du contenu
         if (ctx.INT_VALUE() != null) {
             String intValue = ctx.INT_VALUE().getText();
 
-            // Optional: check for leading zero
+            // Vérifier si l'entier commence par 0 (sauf s'il est égal à 0)
             if (intValue.length() > 1 && intValue.charAt(0) == '0') {
                 errorLogger.addError(new EMJError(
                         "intStartsWithZero",
@@ -350,16 +345,18 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                 ));
             }
 
-            // Optional: range check
+            // Vérifier si l'entier est trop grand ou trop petit
             try {
-                int val = Integer.parseInt(intValue);
-                if (val > 1000000000) {
+                int value = Integer.parseInt(intValue);
+                // En Java, Integer.MAX_VALUE est 2^31-1 et Integer.MIN_VALUE est -2^31
+                // Mais nous pouvons définir nos propres limites pour le langage EMJ
+                if (value > 1000000000) { // 10^9 comme limite supérieure
                     errorLogger.addError(new EMJError(
                             "integerTooBig",
                             "Integer value too big: " + intValue,
                             ctx.start.getLine()
                     ));
-                } else if (val < -1000000000) {
+                } else if (value < -1000000000) { // -10^9 comme limite inférieure
                     errorLogger.addError(new EMJError(
                             "integerTooSmall",
                             "Integer value too small: " + intValue,
@@ -367,6 +364,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     ));
                 }
             } catch (NumberFormatException e) {
+                // Si l'entier ne peut pas être parsé (trop grand pour un int Java)
                 errorLogger.addError(new EMJError(
                         "invalidIntegerFormat",
                         "Invalid integer format: " + intValue,
@@ -375,66 +373,47 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             }
 
             return "INT";
-        }
-
-        // String literal
-        else if (ctx.STRING_VALUE() != null) {
+        } else if (ctx.STRING_VALUE() != null) {
             return "STRING";
-        }
-
-        // Char literal
-        else if (ctx.CHAR_VALUE() != null) {
+        } else if (ctx.CHAR_VALUE() != null) {
             return "CHAR";
-        }
-
-        // Boolean literal
-        else if (ctx.TRUE() != null || ctx.FALSE() != null) {
+        } else if (ctx.TRUE() != null || ctx.FALSE() != null) {
             return "BOOL";
-        }
+        } else if (ctx.tupleValue() != null) {
+            // Pour les tuples, il faut obtenir le type des éléments
+            String elementType1 = (String) visit(ctx.tupleValue().expression(0));
+            String elementType2 = (String) visit(ctx.tupleValue().expression(1));
 
-        // Tuple literal
-        else if (ctx.tupleValue() != null) {
-            int exprCount = ctx.tupleValue().expression().size();
-
-            if (exprCount != 1) {
+            // Vérifier que les deux éléments ont le même type
+            if (!elementType1.equals(elementType2)) {
                 errorLogger.addError(new EMJError(
-                        "tupleWrongSize",
-                        "Tuple must have exactly one element, found: " + exprCount,
+                        "tupleMismatchedTypes",
+                        "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
                         ctx.start.getLine()
                 ));
-                return "UNKNOWN";
             }
 
-            String elementType = (String) visit(ctx.tupleValue().expression(0));
-            return "TUPLE(" + elementType + ")";
-        }
-
-        // Variable reference
-        else if (ctx.EMOJI_ID() != null) {
+            return "TUPLE(" + elementType1 + ")";
+        } else if (ctx.EMOJI_ID() != null) {
+            // Pour les variables, consulter la table des symboles
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
             return info != null ? info.getType() : "UNKNOWN";
-        }
-
-        // Function call
-        else if (ctx.functionCall() != null) {
+        } else if (ctx.functionCall() != null) {
+            // Pour les appels de fonction, consulter la table des symboles
+            String funcId = ctx.functionCall().EMOJI_ID().getText();
+            EMJSymbolInfo funcInfo = symbolTable.lookup(funcId);
             return visitFunctionCall(ctx.functionCall());
-        }
-
-        // Tuple access (e.g., t.1 or t.2)
-        else if (ctx.leftExpression() != null) {
+        } else if (ctx.leftExpression() != null) {
+            // Pour les expressions gauches, utiliser une méthode auxiliaire
             return getLeftExpressionType(ctx.leftExpression());
-        }
-
-        // Parenthesized expression
-        else if (ctx.expression() != null) {
+        } else if (ctx.expression() != null) {
+            // Pour les expressions entre parenthèses, visiter récursivement
             return visit(ctx.expression());
         }
 
-        // Fallback
         return "UNKNOWN";
     }
-
 
 
     // Méthode auxiliaire pour obtenir le type d'une expression gauche
