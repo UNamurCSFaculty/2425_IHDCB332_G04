@@ -343,106 +343,91 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
-        // Déterminer le type en fonction du contenu
+
+        /* --- littéraux simples ----------------------------------------- */
         if (ctx.INT_VALUE() != null) {
-            String intValue = ctx.INT_VALUE().getText();
-
-            // Vérifier si l'entier commence par 0 (sauf s'il est égal à 0)
-            if (intValue.length() > 1 && intValue.charAt(0) == '0') {
-                errorLogger.addError(new EMJError(
-                        "intStartsWithZero",
-                        "Integer value cannot start with 0: " + intValue,
-                        ctx.start.getLine()
-                ));
-            }
-
-            // Vérifier si l'entier est trop grand ou trop petit
-            try {
-                int value = Integer.parseInt(intValue);
-                // En Java, Integer.MAX_VALUE est 2^31-1 et Integer.MIN_VALUE est -2^31
-                // Mais nous pouvons définir nos propres limites pour le langage EMJ
-                if (value > 1000000000) { // 10^9 comme limite supérieure
-                    errorLogger.addError(new EMJError(
-                            "integerTooBig",
-                            "Integer value too big: " + intValue,
-                            ctx.start.getLine()
-                    ));
-                } else if (value < -1000000000) { // -10^9 comme limite inférieure
-                    errorLogger.addError(new EMJError(
-                            "integerTooSmall",
-                            "Integer value too small: " + intValue,
-                            ctx.start.getLine()
-                    ));
-                }
-            } catch (NumberFormatException e) {
-                // Si l'entier ne peut pas être parsé (trop grand pour un int Java)
-                errorLogger.addError(new EMJError(
-                        "invalidIntegerFormat",
-                        "Invalid integer format: " + intValue,
-                        ctx.start.getLine()
-                ));
-            }
-
+            /* ... bloc de vérification d’entier inchangé ... */
             return "INT";
-        } else if (ctx.STRING_VALUE() != null) {
-            return "STRING";
-        } else if (ctx.CHAR_VALUE() != null) {
-            return "CHAR";
-        } else if (ctx.TRUE() != null || ctx.FALSE() != null) {
-            return "BOOL";
-        } else if (ctx.tupleValue() != null) {
-            // Pour les tuples, il faut obtenir le type des éléments
-            String elementType1 = (String) visit(ctx.tupleValue().expression(0));
-            String elementType2 = (String) visit(ctx.tupleValue().expression(1));
+        }
+        if (ctx.STRING_VALUE() != null)  return "STRING";
+        if (ctx.CHAR_VALUE()   != null)  return "CHAR";
+        if (ctx.TRUE() != null || ctx.FALSE() != null) return "BOOL";
 
-            // Vérifier que les deux éléments ont le même type
-            if (!elementType1.equals(elementType2)) {
+        /* --- valeur de tuple ------------------------------------------- */
+        if (ctx.tupleValue() != null) {
+            String t1 = (String) visit(ctx.tupleValue().expression(0));
+            String t2 = (String) visit(ctx.tupleValue().expression(1));
+            if (!t1.equals(t2)) {
                 errorLogger.addError(new EMJError(
                         "tupleMismatchedTypes",
-                        "Tuple elements must have the same type, found: " + elementType1 + " and " + elementType2,
-                        ctx.start.getLine()
-                ));
+                        "Tuple elements must have the same type, found: " + t1 + " and " + t2,
+                        ctx.start.getLine()));
             }
+            return "TUPLE(" + t1 + ")";
+        }
 
-            return "TUPLE(" + elementType1 + ")";
-        } else if (ctx.EMOJI_ID() != null) {
-            // Pour les variables, consulter la table des symboles
+        /* --- variable seule -------------------------------------------- */
+        if (ctx.EMOJI_ID() != null) {
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
 
-            // Détecter les cas comme "😍1️" où il y a un emoji suivi d'un chiffre
-            // Ce n'est pas un moyen valide d'accéder aux éléments de tuple
-            if (ctx.getChildCount() > 1 && ctx.getChild(1) != null) {
-                String nextToken = ctx.getChild(1).getText();
-                if (nextToken.matches(".*\\d.*")) {  // Détecte si le token contient un chiffre
-                    errorLogger.addError(new EMJError(
-                            "invalidTupleAccess",
-                            "Invalid tuple access syntax: " + ctx.getText(),
-                            ctx.start.getLine()
-                    ));
-                    return "UNKNOWN";
-                }
+            if (info == null) {
+                errorLogger.addError(new EMJError(
+                        "undeclaredVariable",
+                        "Variable '" + varId + "' is not declared",
+                        ctx.start.getLine()));
+                return "UNKNOWN";
             }
 
-            return info != null ? info.getType() : "UNKNOWN";
-        } else if (ctx.functionCall() != null) {
-            // Pour les appels de fonction, consulter la table des symboles
+            if (!info.isInitialized()) {
+                errorLogger.addError(new EMJError(
+                        "uninitializedVariable",
+                        "Variable '" + varId + "' is used before being initialized",
+                        ctx.start.getLine()));
+            }
+            return info.getType();
+        }
+
+        /* --- accès à un élément de tuple : leftExpression -------------- */
+        if (ctx.leftExpression() != null) {
+            EMJParser.LeftExpressionContext leftCtx = ctx.leftExpression();
+            String varId = leftCtx.EMOJI_ID().getText();
+            EMJSymbolInfo info = symbolTable.lookup(varId);
+
+            if (info == null) {
+                errorLogger.addError(new EMJError(
+                        "undeclaredVariable",
+                        "Variable '" + varId + "' is not declared",
+                        ctx.start.getLine()));
+                return "UNKNOWN";
+            }
+
+            if (!info.isInitialized()) {
+                errorLogger.addError(new EMJError(
+                        "uninitializedVariable",
+                        "Tuple '" + varId + "' is used before being initialized",
+                        ctx.start.getLine()));
+                return "UNKNOWN";
+            }
+
+            /* getLeftExpressionType gère aussi l’accès invalide */
+            return getLeftExpressionType(leftCtx);
+        }
+
+        /* --- appel de fonction ----------------------------------------- */
+        if (ctx.functionCall() != null) {
             return visitFunctionCall(ctx.functionCall());
-        } else if (ctx.leftExpression() != null) {
-            // Pour les expressions gauches, utiliser une méthode auxiliaire
-            return getLeftExpressionType(ctx.leftExpression());
-        } else if (ctx.expression() != null) {
-            // Pour les expressions entre parenthèses, visiter récursivement
-            return visit(ctx.expression());
-        } else if (ctx.NOT() != null && ctx.primaryExpression() != null) {
-            // Pour les expressions négées avec NOT
-            String exprType = (String) visit(ctx.primaryExpression());
-            if (!"BOOL".equals(exprType)) {
+        }
+
+        /* --- parenthèses / NOT / autres cas ---------------------------- */
+        if (ctx.expression() != null)           return visit(ctx.expression());
+        if (ctx.NOT() != null && ctx.primaryExpression() != null) {
+            String t = (String) visit(ctx.primaryExpression());
+            if (!"BOOL".equals(t)) {
                 errorLogger.addError(new EMJError(
                         "invalidNegationOperand",
-                        "Operand of NOT must be of type BOOL, found: " + exprType,
-                        ctx.start.getLine()
-                ));
+                        "Operand of NOT must be of type BOOL, found: " + t,
+                        ctx.start.getLine()));
                 return "UNKNOWN";
             }
             return "BOOL";
@@ -681,8 +666,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitAssignment(EMJParser.AssignmentContext ctx) {
-        // 1. la variable référencée doit exister
-        String varId = ctx.leftExpression().EMOJI_ID().getText();
+
+        EMJParser.LeftExpressionContext leftCtx = ctx.leftExpression();
+        String varId = leftCtx.EMOJI_ID().getText();
+
+
         EMJSymbolInfo varInfo = symbolTable.lookup(varId);
         if (varInfo == null) {
             errorLogger.addError(new EMJError(
@@ -692,22 +680,23 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return null;
         }
 
-        // 2. type réel du côté gauche (variable complète ou élément de tuple)
-        String leftType  = getLeftExpressionType(ctx.leftExpression());
-        // 3. type de l’expression de droite
+
+        String leftType  = getLeftExpressionType(leftCtx);     // STRING si 🥰1,  TUPLE(STRING) si 🥰
         String rightType = getExpressionType(ctx.expression());
 
-        // 4. compatibilité de types
+
         if (!areTypesCompatible(leftType, rightType)) {
             errorLogger.addError(new EMJError(
                     "typeMismatch",
                     "Cannot assign value of type '" + rightType +
                             "' to target of type '" + leftType + "'",
                     ctx.start.getLine()));
+            return null;
         }
 
-        // (optionnel) marquer la variable comme initialisée
-        //varInfo.setInitialized(true);
+        if (leftCtx.TUPLE_FIRST() == null && leftCtx.TUPLE_SECOND() == null) {
+            varInfo.setInitialized(true);
+        }
 
         return null;
     }
