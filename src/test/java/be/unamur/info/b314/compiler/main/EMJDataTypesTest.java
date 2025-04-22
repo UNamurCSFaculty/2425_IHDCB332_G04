@@ -121,6 +121,18 @@ public class EMJDataTypesTest {
         );
     }
 
+    @Test
+    public void test_ko_tuple() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/03_data_types/ko/ko_tuple.moj", // chemin du fichier .moj
+                testFolder.newFile(),                              // fichier de sortie temporaire
+                false,                                              // false = on attend un échec (KO)
+                "Semantic: Tuple element access on non-tuple variable" // message d'erreur attendu
+        );
+    }
+
+
+
 
 }
 

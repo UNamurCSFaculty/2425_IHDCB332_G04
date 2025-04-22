@@ -73,10 +73,21 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return false;
         }
 
+        // Si les types sont identiques, ils sont compatibles
         if (declaredType.equals(exprType)) {
             return true;
         }
 
+        // Si l'un est un tuple et l'autre ne l'est pas, ils sont incompatibles
+        if (declaredType.startsWith("TUPLE(") && !exprType.startsWith("TUPLE(")) {
+            return false;
+        }
+
+        if (!declaredType.startsWith("TUPLE(") && exprType.startsWith("TUPLE(")) {
+            return false;
+        }
+
+        // Pour deux tuples, vérifier la compatibilité des types internes
         if (declaredType.startsWith("TUPLE(") && exprType.startsWith("TUPLE(")) {
             String declaredInner = declaredType.substring(6, declaredType.length() - 1).trim();
             String exprInner = exprType.substring(6, exprType.length() - 1).trim();
@@ -398,7 +409,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             // Pour les variables, consulter la table des symboles
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
-            return visitFunctionCall(ctx.functionCall());
+            return info != null ? info.getType() : "UNKNOWN";
         } else if (ctx.functionCall() != null) {
             // Pour les appels de fonction, consulter la table des symboles
             String funcId = ctx.functionCall().EMOJI_ID().getText();
@@ -610,24 +621,43 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
     @Override
-    public Object visitAssignment(EMJParser.AssignmentContext ctx){
-
+    public Object visitAssignment(EMJParser.AssignmentContext ctx) {
         // SEMANTIC_CHECK_VAR_IS_DECL : Check if an id in a variable affectation has been previously declared
         String varId = ctx.leftExpression().EMOJI_ID().getText();
 
         // If the variable id is not contained in the variable id array, add an error
         EMJSymbolInfo var = this.symbolTable.lookup(varId);
-        if(var == null) {
+        if (var == null) {
             this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
+            return null;
         }
 
-        String exprType = getExpressionType(ctx.expression());
+        // Déterminer le type de la partie gauche de l'affectation
+        String leftType;
+        if (ctx.leftExpression().TUPLE_FIRST() != null || ctx.leftExpression().TUPLE_SECOND() != null) {
+            // Si on accède à un élément du tuple, on obtient son type interne
+            if (!var.getType().startsWith("TUPLE(")) {
+                this.errorLogger.addError(new EMJError(
+                        "invalidTupleAccess",
+                        "Variable '" + varId + "' is not a tuple",
+                        ctx.start.getLine()
+                ));
+                return null;
+            }
+            leftType = var.getType().substring(6, var.getType().length() - 1);
+        } else {
+            leftType = var.getType();
+        }
 
-        if (!areTypesCompatible(var.getType(), exprType)) {
+        // Obtenir le type de l'expression à droite
+        String rightType = getExpressionType(ctx.expression());
+
+        // Vérifier la compatibilité des types
+        if (!areTypesCompatible(leftType, rightType)) {
             this.errorLogger.addError(new EMJError(
                     "typeMismatch",
-                    "Cannot assign variable of type '" + var.getType() +
-                            "' with an expression of type '" + exprType + "'",
+                    "Cannot assign variable of type '" + leftType +
+                            "' with an expression of type '" + rightType + "'",
                     ctx.start.getLine()
             ));
         }
