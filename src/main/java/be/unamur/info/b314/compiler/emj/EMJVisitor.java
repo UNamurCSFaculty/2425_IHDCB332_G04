@@ -343,17 +343,42 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
-
-        /* --- littéraux simples ----------------------------------------- */
         if (ctx.INT_VALUE() != null) {
-            /* ... bloc de vérification d’entier inchangé ... */
+            String intValue = ctx.INT_VALUE().getText();
+
+            if (intValue.length() > 1 && intValue.charAt(0) == '0') {
+                errorLogger.addError(new EMJError(
+                        "intStartsWithZero",
+                        "Integer value cannot start with 0: " + intValue,
+                        ctx.start.getLine()));
+            }
+
+            try {
+                long val = Long.parseLong(intValue);
+                if (val > 1_000_000_000L) {
+                    errorLogger.addError(new EMJError(
+                            "integerTooBig",
+                            "Integer value too big: " + intValue,
+                            ctx.start.getLine()));
+                } else if (val < -1_000_000_000L) {
+                    errorLogger.addError(new EMJError(
+                            "integerTooSmall",
+                            "Integer value too small: " + intValue,
+                            ctx.start.getLine()));
+                }
+            } catch (NumberFormatException e) {
+                errorLogger.addError(new EMJError(
+                        "invalidIntegerFormat",
+                        "Invalid integer format: " + intValue,
+                        ctx.start.getLine()));
+            }
             return "INT";
         }
-        if (ctx.STRING_VALUE() != null)  return "STRING";
-        if (ctx.CHAR_VALUE()   != null)  return "CHAR";
+
+        if (ctx.STRING_VALUE() != null) return "STRING";
+        if (ctx.CHAR_VALUE()   != null) return "CHAR";
         if (ctx.TRUE() != null || ctx.FALSE() != null) return "BOOL";
 
-        /* --- valeur de tuple ------------------------------------------- */
         if (ctx.tupleValue() != null) {
             String t1 = (String) visit(ctx.tupleValue().expression(0));
             String t2 = (String) visit(ctx.tupleValue().expression(1));
@@ -366,7 +391,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return "TUPLE(" + t1 + ")";
         }
 
-        /* --- variable seule -------------------------------------------- */
         if (ctx.EMOJI_ID() != null) {
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
@@ -378,7 +402,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         ctx.start.getLine()));
                 return "UNKNOWN";
             }
-
             if (!info.isInitialized()) {
                 errorLogger.addError(new EMJError(
                         "uninitializedVariable",
@@ -388,7 +411,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return info.getType();
         }
 
-        /* --- accès à un élément de tuple : leftExpression -------------- */
         if (ctx.leftExpression() != null) {
             EMJParser.LeftExpressionContext leftCtx = ctx.leftExpression();
             String varId = leftCtx.EMOJI_ID().getText();
@@ -401,7 +423,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         ctx.start.getLine()));
                 return "UNKNOWN";
             }
-
             if (!info.isInitialized()) {
                 errorLogger.addError(new EMJError(
                         "uninitializedVariable",
@@ -409,18 +430,17 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         ctx.start.getLine()));
                 return "UNKNOWN";
             }
-
-            /* getLeftExpressionType gère aussi l’accès invalide */
             return getLeftExpressionType(leftCtx);
         }
 
-        /* --- appel de fonction ----------------------------------------- */
         if (ctx.functionCall() != null) {
             return visitFunctionCall(ctx.functionCall());
         }
 
-        /* --- parenthèses / NOT / autres cas ---------------------------- */
-        if (ctx.expression() != null)           return visit(ctx.expression());
+        if (ctx.expression() != null) {
+            return visit(ctx.expression());
+        }
+
         if (ctx.NOT() != null && ctx.primaryExpression() != null) {
             String t = (String) visit(ctx.primaryExpression());
             if (!"BOOL".equals(t)) {
@@ -435,36 +455,6 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
         return "UNKNOWN";
     }
-
-
-    // Méthode auxiliaire pour obtenir le type d'une expression gauche
-//    private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
-//        String varId = ctx.EMOJI_ID().getText();
-//        EMJSymbolInfo info = symbolTable.lookup(varId);
-//
-//        if (info == null) {
-//            return "UNKNOWN";
-//        }
-//
-//        // Si on tente d’accéder à un élément tuple, mais que la variable n’est pas un tuple
-//        if ((ctx.TUPLE_FIRST() != null || ctx.TUPLE_SECOND() != null)) {
-//            String type = info.getType();
-//            if (!type.startsWith("TUPLE(")) {
-//                errorLogger.addError(new EMJError(
-//                        "invalidTupleAccess",
-//                        "Trying to access an element of non-tuple variable '" + varId + "'",
-//                        ctx.getStart().getLine()
-//                ));
-//                return "UNKNOWN";
-//            }
-//
-//            // Retourner le type interne du tuple
-//            return type.substring(6, type.length() - 1);
-//        }
-//
-//        return info.getType();
-//    }
-
 
     // Méthode auxiliaire pour obtenir le type d'une expression gauche
     private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
@@ -666,10 +656,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitAssignment(EMJParser.AssignmentContext ctx) {
-
         EMJParser.LeftExpressionContext leftCtx = ctx.leftExpression();
         String varId = leftCtx.EMOJI_ID().getText();
-
 
         EMJSymbolInfo varInfo = symbolTable.lookup(varId);
         if (varInfo == null) {
@@ -680,10 +668,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return null;
         }
 
-
-        String leftType  = getLeftExpressionType(leftCtx);     // STRING si 🥰1,  TUPLE(STRING) si 🥰
+        String leftType  = getLeftExpressionType(leftCtx);
         String rightType = getExpressionType(ctx.expression());
-
 
         if (!areTypesCompatible(leftType, rightType)) {
             errorLogger.addError(new EMJError(

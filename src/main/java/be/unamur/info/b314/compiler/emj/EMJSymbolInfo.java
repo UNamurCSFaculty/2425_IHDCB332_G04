@@ -4,7 +4,6 @@ import java.util.List;
 
 public class EMJSymbolInfo {
 
-    /* ----------------------- Champs ----------------------- */
     private final String id;
     private final String dataType;          // type d’une variable OU type de retour d’une fonction
     private final String scope;
@@ -12,11 +11,9 @@ public class EMJSymbolInfo {
 
     private boolean isInitialized;          // nouvel état d’initialisation
 
-    /* Pour les fonctions */
     private List<EMJParameterInfo> parameters;
     private String returnType;
 
-    /* ------------------- Constructeur(s) ------------------ */
     public EMJSymbolInfo(String id,
                          String dataType,
                          String scope,
@@ -29,7 +26,6 @@ public class EMJSymbolInfo {
         this.isInitialized = initialized;
     }
 
-    /* -------------------- Getters ------------------------- */
     public String getId()               { return id; }
     public String getType()             { return dataType; }
     public String getScope()            { return scope; }
@@ -42,7 +38,6 @@ public class EMJSymbolInfo {
         return isInitialized;
     }
 
-    /* -------------------- Setters ------------------------- */
     /** Marque la variable / le tuple comme initialisé ou non */
     public void setInitialized(boolean initialized) {
         this.isInitialized = initialized;
