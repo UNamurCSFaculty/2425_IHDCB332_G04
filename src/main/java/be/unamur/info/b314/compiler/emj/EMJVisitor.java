@@ -206,6 +206,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String leftType = (String) visit(ctx.additiveExpression(0));
             String rightType = (String) visit(ctx.additiveExpression(1));
 
+            // Vérifier si l'un des opérandes a déjà une erreur (UNKNOWN)
+            if ("UNKNOWN".equals(leftType) || "UNKNOWN".equals(rightType)) {
+                return "UNKNOWN";
+            }
+
             // Vérifier la compatibilité des types pour l'opération de comparaison
             if (!areComparisonTypesCompatible(leftType, rightType, ctx)) {
                 // Ajouter une erreur sémantique si les types sont incompatibles
@@ -214,6 +219,10 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     "Cannot compare values of incompatible types: '" + leftType + "' and '" + rightType + "'",
                     ctx.start.getLine()
                 ));
+                
+                // Retourner UNKNOWN au lieu de BOOL pour propager l'erreur
+                // Ceci force l'arrêt de la compilation avec une erreur
+                return "UNKNOWN";
             }
 
             return "BOOL";
