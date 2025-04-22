@@ -398,7 +398,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             // Pour les variables, consulter la table des symboles
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
-            return info != null ? info.getType() : "UNKNOWN";
+            return visitFunctionCall(ctx.functionCall());
         } else if (ctx.functionCall() != null) {
             // Pour les appels de fonction, consulter la table des symboles
             String funcId = ctx.functionCall().EMOJI_ID().getText();
