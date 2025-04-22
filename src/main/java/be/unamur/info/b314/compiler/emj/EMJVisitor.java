@@ -34,6 +34,13 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     SEMANTIC_VAR_DECL
     */
     @Override
+    public Object visitProgramFile(EMJParser.ProgramFileContext ctx){
+        for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
+            visitFunctionDecl(functionDeclContext);
+        }
+        return null;
+    }
+    @Override
     public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
 
         // SEMANTIC_CHECK_VAR_ID_ALREADY_EXISTS : Check if the id in the variable declaration does not exist yet
