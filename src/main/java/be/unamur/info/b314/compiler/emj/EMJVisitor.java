@@ -114,6 +114,40 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return false;
     }
 
+    /**
+     * Vérifie si les types sont compatibles pour une opération de comparaison
+     * @param leftType Le type de l'expression gauche
+     * @param rightType Le type de l'expression droite
+     * @param ctx Le contexte de la comparaison
+     * @return true si les types sont compatibles pour la comparaison, false sinon
+     */
+    private boolean areComparisonTypesCompatible(String leftType, String rightType, EMJParser.ComparisonExpressionContext ctx) {
+        // Si l'un des types est inconnu, considérer comme incompatible
+        if (leftType == null || rightType == null || "UNKNOWN".equals(leftType) || "UNKNOWN".equals(rightType)) {
+            return false;
+        }
+
+        // Si les types sont identiques, ils sont compatibles
+        if (leftType.equals(rightType)) {
+            return true;
+        }
+
+        // Pour les opérateurs ==, != seuls les types identiques sont compatibles
+        if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null) {
+            // Pour ces opérateurs, les types doivent être identiques
+            return false;
+        }
+
+        // Pour les opérateurs <, <=, >, >=, seuls les types numériques sont compatibles entre eux
+        if (ctx.LESS() != null || ctx.LEQ() != null || ctx.GREATER() != null || ctx.GEQ() != null) {
+            // Pour ces opérateurs, les deux opérandes doivent être des nombres
+            return "INT".equals(leftType) && "INT".equals(rightType);
+        }
+
+        // Par défaut, les types sont considérés comme incompatibles
+        return false;
+    }
+
     private String getTypeFromContext(EMJParser.TypeContext typeCtx) {
         if (typeCtx.INT_TYPE() != null) {
             return "INT";
@@ -187,24 +221,24 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitComparisonExpression(EMJParser.ComparisonExpressionContext ctx) {
-        // Cas où il y a un opérateur de comparaison (ex: ==, <, >)
-        if (ctx.additiveExpression().size() == 2) {
-            Object gauche = visit(ctx.additiveExpression(0));
-            Object droite = visit(ctx.additiveExpression(1));
+        // S'il y a un opérateur de comparaison, c'est un booléen
+        if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null ||
+                ctx.LESS() != null || ctx.LEQ() != null ||
+                ctx.GREATER() != null || ctx.GEQ() != null) {
+            // Récupérer les types des opérandes de la comparaison
+            String leftType = (String) visit(ctx.additiveExpression(0));
+            String rightType = (String) visit(ctx.additiveExpression(1));
 
-            String typeGauche = (gauche instanceof String) ? (String) gauche : "UNKNOWN";
-            String typeDroite = (droite instanceof String) ? (String) droite : "UNKNOWN";
-
-            // Vérifie la compatibilité des types avant d'autoriser la comparaison
-            if (!areTypesCompatible(typeGauche, typeDroite)) {
+            // Vérifier la compatibilité des types pour l'opération de comparaison
+            if (!areComparisonTypesCompatible(leftType, rightType, ctx)) {
+                // Ajouter une erreur sémantique si les types sont incompatibles
                 errorLogger.addError(new EMJError(
-                        "invalidComparisonTypes",
-                        String.format("Comparaison invalide entre types '%s' et '%s'", typeGauche, typeDroite),
-                        ctx.getStart().getLine()
+                    "incompatibleComparisonTypes",
+                    "Cannot compare values of incompatible types: '" + leftType + "' and '" + rightType + "'",
+                    ctx.start.getLine()
                 ));
             }
 
-            // Toujours retourne un booléen
             return "BOOL";
         }
 
