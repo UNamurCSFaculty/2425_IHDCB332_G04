@@ -194,6 +194,10 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         Object leftObj = visit(ctx.multiplicativeExpression(0));
         String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
 
+        if (ctx.multiplicativeExpression().size() == 1) {
+            return leftType;
+        }
+
         for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
             Object rightObj = visit(ctx.multiplicativeExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
@@ -219,7 +223,9 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
         Object leftObj = visit(ctx.unaryExpression(0));
         String leftType = (leftObj instanceof String) ? (String) leftObj : "UNKNOWN";
-
+        if (ctx.unaryExpression().size() == 1) {
+            return leftType;
+        }
         for (int i = 1; i < ctx.unaryExpression().size(); i++) {
             Object rightObj = visit(ctx.unaryExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
