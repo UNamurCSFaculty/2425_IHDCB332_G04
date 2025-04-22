@@ -187,16 +187,32 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     @Override
     public Object visitComparisonExpression(EMJParser.ComparisonExpressionContext ctx) {
-        // S'il y a un opérateur de comparaison, c'est un booléen
-        if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null ||
-                ctx.LESS() != null || ctx.LEQ() != null ||
-                ctx.GREATER() != null || ctx.GEQ() != null) {
+        // Cas où il y a un opérateur de comparaison (ex: ==, <, >)
+        if (ctx.additiveExpression().size() == 2) {
+            Object gauche = visit(ctx.additiveExpression(0));
+            Object droite = visit(ctx.additiveExpression(1));
+
+            String typeGauche = (gauche instanceof String) ? (String) gauche : "UNKNOWN";
+            String typeDroite = (droite instanceof String) ? (String) droite : "UNKNOWN";
+
+            // Vérifie la compatibilité des types avant d'autoriser la comparaison
+            if (!areTypesCompatible(typeGauche, typeDroite)) {
+                errorLogger.addError(new EMJError(
+                        "invalidComparisonTypes",
+                        String.format("Comparaison invalide entre types '%s' et '%s'", typeGauche, typeDroite),
+                        ctx.getStart().getLine()
+                ));
+            }
+
+            // Toujours retourne un booléen
             return "BOOL";
         }
 
-        // Sinon, déléguer au premier additiveExpression
+        // Cas sans opérateur de comparaison, on envoie à la sous-expression unique
         return visit(ctx.additiveExpression(0));
     }
+
+
 
     @Override
     public Object visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {

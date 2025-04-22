@@ -26,6 +26,17 @@ public class EMJDataTypesTest {
         }
     };
 
+    @Test
+    public void minimal_valid_main_test() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/03_data_types/ok/minimum_valid.moj",
+                testFolder.newFile(),
+                true,
+                "Sanity check: minimal valid EMJ program"
+        );
+    }
+
+
     /* OK tests: should pass */
 
     @Test
@@ -87,4 +98,15 @@ public class EMJDataTypesTest {
                 "Data Types: Already declared variable test"
         );
     }
+
+    @Test
+    public void invalid_comparison_between_string_and_int_test() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/03_data_types/ko/type_not_compatible.moj",
+                testFolder.newFile(),
+                false,
+                "Data Types: Invalid comparison between STRING and INT"
+        );
+    }
+
 }
