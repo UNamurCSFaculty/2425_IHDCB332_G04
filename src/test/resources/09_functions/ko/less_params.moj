@@ -1,7 +1,8 @@
 📦"test.map"
 
 🌀 🏠() {
-  🔢 [💡] = [➕](7); 📢 ❌ one parameter instead of 2
+  📢🔢 [💡] = [➕](7); 📢 ❌ one parameter instead of 2
+  [➕](7); 📢 ❌ one parameter instead of 2
 }
 
 🔢 [➕](🔢 [🐱], 🔢 [🐶]) {
