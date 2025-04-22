@@ -82,7 +82,14 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             String innerExprType = exprType.substring(6, exprType.length() - 1);
             return areTypesCompatible(innerDeclaredType, innerExprType);
         }
-        
+
+        // Accès à un élément de tuple - le type interne du tuple doit correspondre au type déclaré
+        if (declaredType.startsWith("TUPLE(")) {
+            String innerExprType = declaredType.substring(6, declaredType.length() - 1);
+            return areTypesCompatible(exprType, innerExprType);
+        }
+
+
         // Vérifier explicitement les incompatibilités courantes
         if ("INT".equals(declaredType) && ("STRING".equals(exprType) || "BOOL".equals(exprType) || "CHAR".equals(exprType))) {
             return false;
@@ -559,7 +566,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         if (!areTypesCompatible(var.getType(), exprType)) {
             this.errorLogger.addError(new EMJError(
                     "typeMismatch",
-                    "Cannot initialize variable of type '" + var.getType() +
+                    "Cannot assign variable of type '" + var.getType() +
                             "' with an expression of type '" + exprType + "'",
                     ctx.start.getLine()
             ));
