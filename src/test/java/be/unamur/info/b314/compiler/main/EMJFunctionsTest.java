@@ -103,4 +103,14 @@ public class EMJFunctionsTest {
                 "Should fail: function call with too many parameters"
         );
     }
+
+    @Test
+    public void test_ko_function_not_declared() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/function_not_declared.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: function call not declared"
+        );
+    }
 }

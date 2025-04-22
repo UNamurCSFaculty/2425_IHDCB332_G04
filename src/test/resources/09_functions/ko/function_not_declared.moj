@@ -1,0 +1,9 @@
+📦 "test_map.map"
+
+🌀 🏠(){
+    [🧪](5);
+    ↩️;
+}
+
+📢 There's no declaration for the [🧪] function
+📢 So the semantic analyzer should reject this program
