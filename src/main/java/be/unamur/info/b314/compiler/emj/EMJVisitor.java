@@ -605,7 +605,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             boolean isUsedInExpression = true; // Par défaut, considérer comme utilisé dans une expression
             
             // Vérifier si l'appel est directement dans une instruction (statement)
-            if (ctx.getParent() instanceof EMJParser.StatementContext) {
+            if (ctx.getParent() instanceof EMJParser.FunctionCallStmtContext) {
                 isUsedInExpression = false;
             }
             
