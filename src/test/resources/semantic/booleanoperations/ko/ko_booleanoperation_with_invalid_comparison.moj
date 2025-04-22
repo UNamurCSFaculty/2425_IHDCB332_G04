@@ -1,0 +1,13 @@
+📦 "test.map"
+
+🌀 🏠 ( ) {
+    🔟 [🍌] = ❌;
+    🔡 [🦅] = "test";
+    🔢 [👌] = 8542;
+    
+    📢 Test d'une opération conditionnelle avec des types incompatibles
+    📢 Cela devrait échouer car on compare une chaîne avec un entier
+    🔟 [😍] = [🍌] 🤝 ✅ ❓ ([🦅] / 78) - 3 <= [👌];
+    
+    ↩️🌀;
+}
