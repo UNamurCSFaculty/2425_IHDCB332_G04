@@ -121,7 +121,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
      * @param ctx Le contexte de la comparaison
      * @return true si les types sont compatibles pour la comparaison, false sinon
      */
-    private boolean areComparisonTypesCompatible(String leftType, String rightType, EMJParser.ComparisonExpressionContext ctx) {
+    private boolean areComparisonTypesCompatible(String leftType, String rightType, Object ctx) {
         // Si l'un des types est inconnu, considérer comme incompatible
         if (leftType == null || rightType == null || "UNKNOWN".equals(leftType) || "UNKNOWN".equals(rightType)) {
             return false;
@@ -133,15 +133,18 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         }
 
         // Pour les opérateurs ==, != seuls les types identiques sont compatibles
-        if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null) {
-            // Pour ces opérateurs, les types doivent être identiques
-            return false;
-        }
+        if (ctx instanceof EMJParser.ComparisonExpressionContext) {
+            EMJParser.ComparisonExpressionContext compCtx = (EMJParser.ComparisonExpressionContext) ctx;
+            if (compCtx.DOUBLE_EQUAL() != null || compCtx.NOTEQUAL() != null) {
+                // Pour ces opérateurs, les types doivent être identiques
+                return false;
+            }
 
-        // Pour les opérateurs <, <=, >, >=, seuls les types numériques sont compatibles entre eux
-        if (ctx.LESS() != null || ctx.LEQ() != null || ctx.GREATER() != null || ctx.GEQ() != null) {
-            // Pour ces opérateurs, les deux opérandes doivent être des nombres
-            return "INT".equals(leftType) && "INT".equals(rightType);
+            // Pour les opérateurs <, <=, >, >=, seuls les types numériques sont compatibles entre eux
+            if (compCtx.LESS() != null || compCtx.LEQ() != null || compCtx.GREATER() != null || compCtx.GEQ() != null) {
+                // Pour ces opérateurs, les deux opérandes doivent être des nombres
+                return "INT".equals(leftType) && "INT".equals(rightType);
+            }
         }
 
         // Par défaut, les types sont considérés comme incompatibles
@@ -257,6 +260,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         if (ctx.multiplicativeExpression().size() == 1) {
             return leftType;
         }
+        
+        boolean hasTypeError = false;
 
         for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
             Object rightObj = visit(ctx.multiplicativeExpression(i));
@@ -269,13 +274,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         "Operands of '+' or '-' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
                 ));
+                hasTypeError = true;
             }
 
-            // Pour les itérations suivantes
-            leftType = "INT";
+            // Pour les itérations suivantes - ne pas forcer le type si erreur
+            if (!hasTypeError) {
+                leftType = "INT";
+            } else {
+                leftType = "UNKNOWN";
+            }
         }
 
-        return "INT";
+        // Retourner UNKNOWN en cas d'erreur de type, sinon INT
+        return hasTypeError ? "UNKNOWN" : "INT";
     }
 
 
@@ -286,6 +297,9 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         if (ctx.unaryExpression().size() == 1) {
             return leftType;
         }
+        
+        boolean hasTypeError = false;
+        
         for (int i = 1; i < ctx.unaryExpression().size(); i++) {
             Object rightObj = visit(ctx.unaryExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
@@ -297,10 +311,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
                         ctx.start.getLine()
                 ));
+                hasTypeError = true;
             }
 
             // Vérifie la division par zéro uniquement si la valeur est littérale
-            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c’est un opérateur '/'
+            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c'est un opérateur '/'
                 EMJParser.UnaryExpressionContext rightExpr = ctx.unaryExpression(i);
                 if (rightExpr.primaryExpression() != null && rightExpr.primaryExpression().INT_VALUE() != null) {
                     String valueText = rightExpr.primaryExpression().INT_VALUE().getText();
@@ -318,10 +333,16 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                 }
             }
 
-            leftType = "INT"; // continuer avec un type INT
+            // Ne pas forcer le type à INT si une erreur a été détectée
+            if (!hasTypeError) {
+                leftType = "INT"; 
+            } else {
+                leftType = "UNKNOWN";
+            }
         }
 
-        return "INT";
+        // Retourner UNKNOWN en cas d'erreur de type, sinon INT
+        return hasTypeError ? "UNKNOWN" : "INT";
     }
 
     @Override
