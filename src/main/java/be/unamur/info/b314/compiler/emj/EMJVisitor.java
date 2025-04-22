@@ -409,11 +409,24 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             // Pour les variables, consulter la table des symboles
             String varId = ctx.EMOJI_ID().getText();
             EMJSymbolInfo info = symbolTable.lookup(varId);
+
+            // Détecter les cas comme "😍1️" où il y a un emoji suivi d'un chiffre
+            // Ce n'est pas un moyen valide d'accéder aux éléments de tuple
+            if (ctx.getChildCount() > 1 && ctx.getChild(1) != null) {
+                String nextToken = ctx.getChild(1).getText();
+                if (nextToken.matches(".*\\d.*")) {  // Détecte si le token contient un chiffre
+                    errorLogger.addError(new EMJError(
+                            "invalidTupleAccess",
+                            "Invalid tuple access syntax: " + ctx.getText(),
+                            ctx.start.getLine()
+                    ));
+                    return "UNKNOWN";
+                }
+            }
+
             return info != null ? info.getType() : "UNKNOWN";
         } else if (ctx.functionCall() != null) {
             // Pour les appels de fonction, consulter la table des symboles
-            String funcId = ctx.functionCall().EMOJI_ID().getText();
-            EMJSymbolInfo funcInfo = symbolTable.lookup(funcId);
             return visitFunctionCall(ctx.functionCall());
         } else if (ctx.leftExpression() != null) {
             // Pour les expressions gauches, utiliser une méthode auxiliaire
@@ -421,6 +434,18 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         } else if (ctx.expression() != null) {
             // Pour les expressions entre parenthèses, visiter récursivement
             return visit(ctx.expression());
+        } else if (ctx.NOT() != null && ctx.primaryExpression() != null) {
+            // Pour les expressions négées avec NOT
+            String exprType = (String) visit(ctx.primaryExpression());
+            if (!"BOOL".equals(exprType)) {
+                errorLogger.addError(new EMJError(
+                        "invalidNegationOperand",
+                        "Operand of NOT must be of type BOOL, found: " + exprType,
+                        ctx.start.getLine()
+                ));
+                return "UNKNOWN";
+            }
+            return "BOOL";
         }
 
         return "UNKNOWN";
@@ -660,41 +685,37 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         String varId = ctx.leftExpression().EMOJI_ID().getText();
 
         // If the variable id is not contained in the variable id array, add an error
-        EMJSymbolInfo var = this.symbolTable.lookup(varId);
-        if (var == null) {
+        EMJSymbolInfo leftVar = this.symbolTable.lookup(varId);
+        if (leftVar == null) {
             this.errorLogger.addError(new EMJError("varIdNotDecl", ctx.getText(), ctx.start.getLine()));
             return null;
         }
 
-        // Déterminer le type de la partie gauche de l'affectation
-        String leftType;
-        if (ctx.leftExpression().TUPLE_FIRST() != null || ctx.leftExpression().TUPLE_SECOND() != null) {
-            // Si on accède à un élément du tuple, on obtient son type interne
-            if (!var.getType().startsWith("TUPLE(")) {
-                this.errorLogger.addError(new EMJError(
-                        "invalidTupleAccess",
-                        "Variable '" + varId + "' is not a tuple",
-                        ctx.start.getLine()
-                ));
-                return null;
-            }
-            leftType = var.getType().substring(6, var.getType().length() - 1);
-        } else {
-            leftType = var.getType();
+        // Analyser l'expression de droite
+        EMJParser.ExpressionContext exprCtx = ctx.expression();
+
+        // Vérifier pour le cas spécifique où on essaie d'accéder à un élément de tuple de manière incorrecte
+        if (exprCtx.getText().matches(".*[😍]\\d+.*")) {
+            this.errorLogger.addError(new EMJError(
+                    "invalidTupleAccess",
+                    "Invalid tuple access syntax in assignment: " + exprCtx.getText(),
+                    ctx.start.getLine()
+            ));
+            return null;
         }
 
-        // Obtenir le type de l'expression à droite
-        String rightType = getExpressionType(ctx.expression());
+        String exprType = getExpressionType(exprCtx);
 
         // Vérifier la compatibilité des types
-        if (!areTypesCompatible(leftType, rightType)) {
+        if (!areTypesCompatible(leftVar.getType(), exprType)) {
             this.errorLogger.addError(new EMJError(
                     "typeMismatch",
-                    "Cannot assign variable of type '" + leftType +
-                            "' with an expression of type '" + rightType + "'",
+                    "Cannot assign variable of type '" + leftVar.getType() +
+                            "' with an expression of type '" + exprType + "'",
                     ctx.start.getLine()
             ));
         }
+
         return null;
     }
 
