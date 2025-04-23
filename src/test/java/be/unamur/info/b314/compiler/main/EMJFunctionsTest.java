@@ -153,4 +153,14 @@ public class EMJFunctionsTest {
                 "Should fail: a string is passed instead of an expected integer"
         );
     }
+
+    @Test
+    public void test_ko_function_invalid_return_type() throws Exception {
+        CompilerTestHelper.launchCompilation(
+                "/09_functions/ko/function_invalid_return_type.moj",
+                testFolder.newFile(),
+                false,
+                "Should fail: function returns a boolean instead of an integer"
+        );
+    }
 }
