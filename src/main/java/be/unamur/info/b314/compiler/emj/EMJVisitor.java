@@ -209,7 +209,22 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public Object visitOrExpression(EMJParser.OrExpressionContext ctx) {
         // S'il y a plus d'une andExpression connectée par OR, c'est un booléen
         if (!ctx.OR().isEmpty()) {
-            return "BOOL";
+            boolean hasTypeError = false;
+            
+            // Vérifier chaque opérande
+            for (EMJParser.AndExpressionContext andExpr : ctx.andExpression()) {
+                String type = (String) visit(andExpr);
+                if (!"BOOL".equals(type) && !"UNKNOWN".equals(type)) {
+                    errorLogger.addError(new EMJError(
+                        "invalidBooleanOperand",
+                        "Operand of OR must be of type BOOL, found: " + type,
+                        ctx.start.getLine()
+                    ));
+                    hasTypeError = true;
+                }
+            }
+            
+            return hasTypeError ? "UNKNOWN" : "BOOL";
         }
 
         // Sinon, déléguer au premier andExpression
@@ -220,7 +235,22 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public Object visitAndExpression(EMJParser.AndExpressionContext ctx) {
         // S'il y a plus d'une notExpression connectée par AND, c'est un booléen
         if (!ctx.AND().isEmpty()) {
-            return "BOOL";
+            boolean hasTypeError = false;
+            
+            // Vérifier chaque opérande
+            for (EMJParser.NotExpressionContext notExpr : ctx.notExpression()) {
+                String type = (String) visit(notExpr);
+                if (!"BOOL".equals(type) && !"UNKNOWN".equals(type)) {
+                    errorLogger.addError(new EMJError(
+                        "invalidBooleanOperand",
+                        "Operand of AND must be of type BOOL, found: " + type,
+                        ctx.start.getLine()
+                    ));
+                    hasTypeError = true;
+                }
+            }
+            
+            return hasTypeError ? "UNKNOWN" : "BOOL";
         }
 
         // Sinon, déléguer au premier notExpression
@@ -231,6 +261,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     public Object visitNotExpression(EMJParser.NotExpressionContext ctx) {
         // S'il y a un NOT, c'est un booléen
         if (ctx.NOT() != null) {
+            String exprType = (String) visit(ctx.comparisonExpression());
+            if (!"BOOL".equals(exprType) && !"UNKNOWN".equals(exprType)) {
+                errorLogger.addError(new EMJError(
+                    "invalidNotOperand",
+                    "Operand of NOT must be of type BOOL, found: " + exprType,
+                    ctx.start.getLine()
+                ));
+                return "UNKNOWN";
+            }
             return "BOOL";
         }
 
@@ -256,6 +295,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                     "Cannot compare values of incompatible types: '" + leftType + "' and '" + rightType + "'",
                     ctx.start.getLine()
                 ));
+                return "UNKNOWN"; // Retourner UNKNOWN au lieu de BOOL quand les types sont incompatibles
             }
 
             return "BOOL";
