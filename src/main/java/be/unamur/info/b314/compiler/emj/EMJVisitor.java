@@ -336,8 +336,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                                 "Cannot divide a STRING by an INT: '" + leftType + "' / '" + rightType + "'",
                                 ctx.start.getLine()
                         ));
-                        // Jeter une exception pour arrêter la compilation
-                        throw new RuntimeException("Semantic error: Cannot divide a STRING by an INT");
+
                     } else {
                         errorLogger.addError(new EMJError(
                                 "invalidOperandType",
