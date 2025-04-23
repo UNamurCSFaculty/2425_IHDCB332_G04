@@ -49,7 +49,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         symbolTable.enterScope("function_" + declaredInfo.getId());
         String expectedReturn = declaredInfo.getReturnType();
         String actualReturn;
-        if (ctx.returnStatement().VOID_TYPE() != null) {
+        if (isAVoidReturn(ctx)) {
             actualReturn = "VOID";
         } else {
             actualReturn = getExpressionType(ctx.returnStatement().expression());
@@ -60,6 +60,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             return false;
         }
         return true;
+    }
+
+    private static boolean isAVoidReturn(EMJParser.FunctionDeclContext ctx) {
+        return ctx.returnStatement().VOID_TYPE() != null || ctx.returnStatement().RETURN_VOID() != null
+                || ctx.returnStatement().expression() == null || ctx.returnStatement().expression().isEmpty();
     }
 
     @Override
@@ -161,7 +166,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
     private String getExpressionType(EMJParser.ExpressionContext ctx) {
         // Visiter l'expression et récupérer le résultat
-        Object result = visitExpression(ctx);
+        Object result = visit(ctx);
 
         // Convertir le résultat en type
         if (result instanceof String) {
