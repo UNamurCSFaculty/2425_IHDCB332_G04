@@ -320,18 +320,35 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
             Object rightObj = visit(ctx.unaryExpression(i));
             String rightType = (rightObj instanceof String) ? (String) rightObj : "UNKNOWN";
 
-            // Vérifie que les types sont bien INT
-            if (!leftType.equals("INT") || !rightType.equals("INT")) {
-                errorLogger.addError(new EMJError(
-                        "invalidOperandType",
-                        "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
-                        ctx.start.getLine()
-                ));
-                hasTypeError = true;
+            // Si l'un des opérandes a déjà une erreur de type, propager l'erreur
+            if ("UNKNOWN".equals(leftType) || "UNKNOWN".equals(rightType)) {
+                return "UNKNOWN";
             }
 
-            // Vérifie la division par zéro uniquement si la valeur est littérale
-            if (ctx.DIVIDE(i - 1) != null) { // Vérifie si c'est un opérateur '/'
+            // Vérification spécifique pour la division
+            if (ctx.DIVIDE(i - 1) != null) {
+                // Vérifier que les deux types sont INT
+                if (!leftType.equals("INT") || !rightType.equals("INT")) {
+                    // Cas spécial: division d'une chaîne par un nombre, erreur sémantique
+                    if (leftType.equals("STRING") && rightType.equals("INT")) {
+                        errorLogger.addError(new EMJError(
+                                "invalidDivisionOperation",
+                                "Cannot divide a STRING by an INT: '" + leftType + "' / '" + rightType + "'",
+                                ctx.start.getLine()
+                        ));
+                        // Jeter une exception pour arrêter la compilation
+                        throw new RuntimeException("Semantic error: Cannot divide a STRING by an INT");
+                    } else {
+                        errorLogger.addError(new EMJError(
+                                "invalidOperandType",
+                                "Operands of '*' or '/' must be of type INT, found: " + leftType + " and " + rightType,
+                                ctx.start.getLine()
+                        ));
+                    }
+                    hasTypeError = true;
+                }
+
+                // Vérification de division par zéro
                 EMJParser.UnaryExpressionContext rightExpr = ctx.unaryExpression(i);
                 if (rightExpr.primaryExpression() != null && rightExpr.primaryExpression().INT_VALUE() != null) {
                     String valueText = rightExpr.primaryExpression().INT_VALUE().getText();
@@ -343,9 +360,20 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                                     "Division by zero is not allowed.",
                                     ctx.start.getLine()
                             ));
+                            hasTypeError = true;
                         }
                     } catch (NumberFormatException ignored) {
                     }
+                }
+            } else {
+                // Pour la multiplication, vérifier simplement que les deux types sont INT
+                if (!leftType.equals("INT") || !rightType.equals("INT")) {
+                    errorLogger.addError(new EMJError(
+                            "invalidOperandType",
+                            "Operands of '*' must be of type INT, found: " + leftType + " and " + rightType,
+                            ctx.start.getLine()
+                    ));
+                    hasTypeError = true;
                 }
             }
 
