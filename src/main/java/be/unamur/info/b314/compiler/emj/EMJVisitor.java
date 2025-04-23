@@ -33,9 +33,40 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
             visitFunctionDecl(functionDeclContext);
         }
+
+        for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
+            if (!checkDeclaration(functionDeclContext)){
+                return null;
+            }
+        }
+
         visit(ctx.mainFunction());
         return null;
     }
+
+    private boolean checkDeclaration(EMJParser.FunctionDeclContext ctx) {
+        EMJSymbolInfo declaredInfo = symbolTable.lookup(ctx.EMOJI_ID().getText());
+        symbolTable.enterScope("function_" + declaredInfo.getId());
+        String expectedReturn = declaredInfo.getReturnType();
+        String actualReturn;
+        if (isAVoidReturn(ctx)) {
+            actualReturn = "VOID";
+        } else {
+            actualReturn = getExpressionType(ctx.returnStatement().expression());
+        }
+        symbolTable.exitScope();
+        if (!expectedReturn.equals(actualReturn)) {
+            errorLogger.addError(new EMJError(String.format("Function %s returns %s instead of %s .", declaredInfo.getId(), actualReturn, expectedReturn), ctx.getText(), ctx.start.getLine()));
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isAVoidReturn(EMJParser.FunctionDeclContext ctx) {
+        return ctx.returnStatement().VOID_TYPE() != null || ctx.returnStatement().RETURN_VOID() != null
+                || ctx.returnStatement().expression() == null || ctx.returnStatement().expression().isEmpty();
+    }
+
     @Override
     public Object visitVarDecl(EMJParser.VarDeclContext ctx) {
 
