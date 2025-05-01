@@ -170,4 +170,113 @@ public class EMJSymbolTable {
                (currentScope.equals(ancestorScope) || 
                 currentScope.charAt(ancestorScope.length()) == '.');
     }
+
+    /**
+     * Affiche tous les symboles présents dans la table des symboles avec leur information détaillée
+     * Les symboles sont organisés par portée et par type (variables, fonctions, paramètres)
+     */
+    /*@ public
+      @ requires symbols != null;
+      @ requires scopeSymbols != null;
+      @*/
+    public void displaySymbolTable() {
+        System.out.println("\n════════════════════════ TABLE DES SYMBOLES EMJ ════════════════════════");
+        
+        if (symbols.isEmpty()) {
+            System.out.println("\nLa table des symboles est vide.");
+            return;
+        }
+        
+        // Affichage par portées
+        System.out.println("\nTotal des symboles: " + symbols.size());
+        
+        // Trier les portées pour un affichage ordonné
+        List<String> sortedScopes = new ArrayList<>(scopeSymbols.keySet());
+        Collections.sort(sortedScopes);
+        
+        for (String scope : sortedScopes) {
+            List<String> scopeSymbolList = scopeSymbols.get(scope);
+            if (scopeSymbolList.isEmpty()) {
+                continue;
+            }
+            
+            System.out.println("\n[PORTÉE: " + scope + "] " + scopeSymbolList.size() + " symbole(s)");
+            System.out.println("────────────────────────────────────────────────────────────────────");
+            
+            // Regrouper par type de symbole pour un affichage plus structuré
+            List<EMJSymbolInfo> variables = new ArrayList<>();
+            List<EMJSymbolInfo> functions = new ArrayList<>();
+            List<EMJSymbolInfo> parameters = new ArrayList<>();
+            
+            for (String symbolId : scopeSymbolList) {
+                EMJSymbolInfo symbolInfo = symbols.get(symbolId);
+                switch (symbolInfo.getSymbolType()) {
+                    case VARIABLE:
+                        variables.add(symbolInfo);
+                        break;
+                    case FUNCTION:
+                        functions.add(symbolInfo);
+                        break;
+                    case PARAMETER:
+                        parameters.add(symbolInfo);
+                        break;
+                }
+            }
+            
+            // Afficher les variables
+            if (!variables.isEmpty()) {
+                System.out.println("  ◼️ VARIABLES:");
+                for (EMJSymbolInfo variable : variables) {
+                    System.out.printf("    • %-15s : %-15s (type: %-10s) %s%n", 
+                        variable.getId(), 
+                        variable.getScope() + ":" + variable.getId(),
+                        variable.getType(),
+                        variable.isInitialized() ? "[initialisé]" : "[non initialisé]");
+                }
+            }
+            
+            // Afficher les fonctions
+            if (!functions.isEmpty()) {
+                System.out.println("  ◼️ FONCTIONS:");
+                for (EMJSymbolInfo function : functions) {
+                    StringBuilder signature = new StringBuilder();
+                    signature.append(function.getId()).append("(");
+                    
+                    List<EMJParameterInfo> params = function.getParameters();
+                    if (params != null && !params.isEmpty()) {
+                        for (int i = 0; i < params.size(); i++) {
+                            EMJParameterInfo param = params.get(i);
+                            signature.append(param.getType()).append(" ").append(param.getId());
+                            if (i < params.size() - 1) {
+                                signature.append(", ");
+                            }
+                        }
+                    }
+                    signature.append(") : ").append(function.getReturnType());
+                    
+                    System.out.printf("    • %-50s%n", signature.toString());
+                    
+                    // Afficher les paramètres si présents
+                    if (params != null && !params.isEmpty()) {
+                        System.out.println("      Paramètres:");
+                        for (EMJParameterInfo param : params) {
+                            System.out.printf("        ◦ %-15s : %-10s%n", param.getId(), param.getType());
+                        }
+                    } else {
+                        System.out.println("      Aucun paramètre");
+                    }
+                }
+            }
+            
+            // Afficher les paramètres qui sont dans cette portée (rare, mais possible)
+            if (!parameters.isEmpty()) {
+                System.out.println("  ◼️ PARAMÈTRES (non liés à une fonction):");
+                for (EMJSymbolInfo param : parameters) {
+                    System.out.printf("    • %-15s : %-10s%n", param.getId(), param.getType());
+                }
+            }
+        }
+        
+        System.out.println("════════════════════════════════════════════════════════════════════════");
+    }
 }

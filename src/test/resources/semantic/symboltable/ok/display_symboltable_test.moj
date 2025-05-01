@@ -1,0 +1,54 @@
+🎮 Programme de test de la table des symboles 🎮
+
+// Déclaration de variables globales
+🔢 nombreGlobal = 42
+
+🔡 messageGlobal = "Test table symboles"
+
+📚 tableauTest[5] = {10, 20, 30, 40, 50}
+
+// Fonction qui additionne deux nombres
+➡️ 🔢 additionner(🔢 a, 🔢 b) {
+    ↩️ a + b
+}
+
+// Fonction sans paramètres qui retourne un message
+➡️ 🔡 obtenirMessage() {
+    ↩️ "Hello EMJ!"
+}
+
+// Fonction void avec retour explicite (suivant les nouvelles règles)
+➡️ ⚫ afficherResultat(🔢 valeur) {
+    🔢 temp = valeur * 2
+    
+    // Utilisation de variables locales pour tester les différentes portées
+    🔡 resultatMessage = "Résultat: "
+    
+    // Structure imbriquée pour tester les portées multiples
+    🔂 (🔢 i = 0; i < 5; i = i + 1) {
+        🔢 compteurBoucle = i
+        
+        // Utilisation de tableaux et de conditions
+        ↪️ (tableauTest[i] > 25) {
+            🔡 etatValeur = "grande"
+        } ↪️ {
+            🔡 etatValeur = "petite"
+        }
+    }
+    
+    // Retour explicite obligatoire pour les fonctions void
+    ↩️⚫
+}
+
+// Programme principal
+➡️ ⚫ main() {
+    // Appels de fonctions
+    🔢 somme = additionner(10, 20)
+    🔡 message = obtenirMessage()
+    
+    // Utilisation du résultat
+    afficherResultat(somme)
+    
+    // Retour explicite pour main (void)
+    ↩️⚫
+}
