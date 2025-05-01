@@ -3,14 +3,18 @@ package be.unamur.info.b314.compiler.emj;
 import be.unamur.info.b314.compiler.emj.EMJError;
 import java.util.ArrayList;
 
-/*
-Error logger for EMJ ; Will store errors when visiting a tree
-@author : Alix Decrop
-@version : 1.0
-*/
-/*@ public invariant errors != null;
-  @ public invariant hasErrors == !errors.isEmpty();
-  @*/
+/**
+ * @author : Alix Decrop
+ * @version : 1.0
+ * @overview Journal d'erreurs pour le langage EMJ, mutable.
+ * Enregistre et gère les erreurs détectées lors de l'analyse du code EMJ.
+ * 
+ * @specfield errors : List<EMJError> — liste des erreurs rencontrées
+ * @specfield hasErrors : boolean — indique si des erreurs ont été enregistrées
+ * 
+ * @invariant errors != null
+ * @invariant hasErrors == !errors.isEmpty()
+ */
 public class EMJErrorLogger {
 
     private ArrayList<EMJError> errors;

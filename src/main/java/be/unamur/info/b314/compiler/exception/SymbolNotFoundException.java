@@ -3,6 +3,9 @@ package be.unamur.info.b314.compiler.exception;
 /**
  *
  * @author James Ortiz - james.ortizvega@unamur.be
+ *  * @overview Exception levée lorsqu'un symbole n'est pas trouvé dans la table des symboles, immutable.
+ *  *
+ *  * @invariant getMessage() != null
  */
 /*@ public invariant getMessage() != null;
   @*/
