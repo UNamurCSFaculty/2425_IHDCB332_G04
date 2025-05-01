@@ -7,8 +7,7 @@ package be.unamur.info.b314.compiler.exception;
  *  *
  *  * @invariant getMessage() != null
  */
-/*@ public invariant getMessage() != null;
-  @*/
+
 public class SymbolNotFoundException extends RuntimeException {
 
     /**
