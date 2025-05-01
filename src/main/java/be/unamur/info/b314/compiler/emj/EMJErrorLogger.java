@@ -16,46 +16,46 @@ public class EMJErrorLogger {
     private ArrayList<EMJError> errors;
     private boolean hasErrors;
 
-    /*@ ensures errors != null;
-      @ ensures errors.isEmpty();
-      @ ensures !hasErrors;
-      @*/
+    /**
+     * @effects initialise un nouveau journal d'erreurs vide
+     *          this_post.errors est une liste vide
+     *          this_post.hasErrors est false
+     */
     public EMJErrorLogger() {
         this.errors = new ArrayList<EMJError>();
         this.hasErrors = false;
     }
 
-    /*@ pure
-      @ ensures \result == errors;
-      @*/
+    /**
+     * @return this.errors - la liste des erreurs enregistrées
+     */
     public ArrayList<EMJError> getErrors() {
         return this.errors;
     }
 
-    /*@ requires error != null;
-      @ ensures errors.contains(error);
-      @ ensures hasErrors;
-      @ ensures errors.size() == \old(errors.size()) + 1;
-      @ assignable errors, hasErrors;
-      @*/
+    /**
+     * @requires error != null
+     * @modifies this.errors, this.hasErrors
+     * @effects ajoute error à this.errors
+     *          this_post.hasErrors est true
+     *          this_post.errors.size() = this_pre.errors.size() + 1
+     */
     public void addError(EMJError error) {
         this.errors.add(error);
         this.hasErrors = true;
     }
 
-    /*@ pure
-      @ ensures \result == hasErrors;
-      @ ensures \result == !errors.isEmpty();
-      @*/
+    /**
+     * @return true si des erreurs ont été enregistrées, false sinon
+     */
     public boolean containsErrors() {
         return this.hasErrors;
     }
 
-    /*@ pure
-      @ ensures \result != null;
-      @ ensures errors.isEmpty() ==> \result.equals("");
-      @ ensures !errors.isEmpty() ==> \result.contains(errors.get(0).getErrorString());
-      @*/
+    /**
+     * @return une chaîne de caractères formatant toutes les erreurs enregistrées
+     *         chaîne vide si aucune erreur n'a été enregistrée
+     */
     public String getErrorsString() {
         String errorsString = "";
 
