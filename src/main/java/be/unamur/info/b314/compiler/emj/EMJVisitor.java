@@ -22,6 +22,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     private final EMJSymbolTable symbolTable;
 
     /**
+     * Constructeur par défaut
      * @effects this_post.errorLogger = new EMJErrorLogger()
      *          this_post.symbolTable = new EMJSymbolTable()
      */
@@ -31,6 +32,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Retourne le logger d'erreurs utilisé par ce visiteur
      * @return this.errorLogger
      */
     public EMJErrorLogger getErrorLogger() {
@@ -38,6 +40,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite le fichier de programme principal
+     * @param ctx Contexte du fichier programme
      * @requires ctx != null
      * @effects visite chaque déclaration de fonction dans le fichier
      *          vérifie que la fonction main existe et est du bon type
@@ -60,6 +64,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Vérifie la cohérence de la déclaration de fonction
+     * @param ctx Contexte de la déclaration de fonction
      * @requires ctx != null && ctx.EMOJI_ID() != null && symbolTable.lookup(ctx.EMOJI_ID().getText()) != null
      * @modifies symbolTable.currentScope
      * @effects vérifie que le type de retour de la fonction correspond à sa déclaration
@@ -85,6 +91,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Vérifie si une déclaration de fonction a un retour de type void
+     * @param ctx Contexte de la déclaration de fonction
      * @requires ctx != null && ctx.returnStatement() != null
      * @return true si l'instruction de retour est de type void, false sinon
      */
@@ -94,6 +102,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite une déclaration de variable
+     * @param ctx Contexte de la déclaration de variable
      * @requires ctx != null && ctx.EMOJI_ID() != null && ctx.type() != null
      * @effects ajoute une variable dans la table des symboles
      *          vérifie la compatibilité de type si une expression d'initialisation est présente
@@ -134,6 +144,9 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Vérifie la compatibilité entre un type déclaré et un type d'expression
+     * @param declaredType Type déclaré
+     * @param exprType Type de l'expression
      * @requires declaredType != null && exprType != null
      * @effects vérifie si un type d'expression est compatible avec un type déclaré
      * @return true si les types sont compatibles, false sinon
@@ -174,6 +187,9 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     /**
      * Vérifie si les types sont compatibles pour une opération de comparaison
      * 
+     * @param leftType Type de l'opérande gauche
+     * @param rightType Type de l'opérande droite
+     * @param ctx Le contexte de la comparaison
      * @requires leftType != null && rightType != null && ctx != null
      * @effects vérifie la compatibilité des types dans une expression de comparaison
      *          ajoute une erreur au errorLogger si les types sont incompatibles
@@ -215,14 +231,11 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         // Par défaut, les types sont considérés comme incompatibles
         return false;
     }
-    /*@ requires typeCtx != null;
-       @ ensures \result != null;
-       @ ensures typeCtx.INT_TYPE() != null ==> \result.equals("INT");
-       @ ensures typeCtx.BOOLEAN_TYPE() != null ==> \result.equals("BOOLEAN");
-       @ ensures typeCtx.VOID_TYPE() != null ==> \result.equals("VOID");
     /**
-     * @requires typeCtx != null
-     * @return le type EMJ correspondant au contexte sous forme de chaîne
+     * Détermine le type EMJ à partir d'un contexte de type.
+     * 
+     * @param typeCtx Contexte de type à analyser.
+     * @return le type EMJ correspondant au contexte sous forme de chaîne.
      *         "INT" pour les entiers, "BOOL" pour les booléens, etc.
      *         "TUPLE(type)" pour les tuples, avec le type interne entre parenthèses
      *         "UNKNOWN" si le type n'est pas reconnu
@@ -247,6 +260,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
     /**
+     * Détermine le type d'une expression
+     * @param ctx Contexte de l'expression
      * @requires ctx != null
      * @return le type de l'expression sous forme de chaîne
      *         retourne "UNKNOWN" si le type n'a pas pu être déterminé
@@ -263,6 +278,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return "UNKNOWN";
     }
     /**
+     * Visite une expression
+     * @param ctx Contexte de l'expression
      * @requires ctx != null
      * @effects délègue la visite à la méthode orExpression
      * @return le type de l'expression sous forme de chaîne, jamais null
@@ -274,6 +291,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite une expression OR
+     * @param ctx Contexte de l'expression OR
      * @requires ctx != null
      * @effects visite les expressions composant l'expression OR
      *          vérifie que les opérandes sont de type BOOL
@@ -309,6 +328,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite une expression AND
+     * @param ctx Contexte de l'expression AND
      * @requires ctx != null
      * @effects visite les expressions composant l'expression AND
      *          vérifie que les opérandes sont de type BOOL
@@ -343,12 +364,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return visit(ctx.notExpression(0));
     }
 
-    /*@ requires ctx != null;
-    @ ensures ctx.NOT() == null ==> \result == visit(ctx.comparisonExpression());
-    @ ensures ctx.NOT() != null && visit(ctx.comparisonExpression()).equals("BOOLEAN") ==>
-    @         \result.equals("BOOLEAN");
-    @ assignable \nothing;
-    @*/
+    /**
+     * Visite une expression de négation (NOT)
+     * @param ctx Contexte de l'expression NOT
+     * @requires ctx != null
+     * @ensures ctx.NOT() == null ==> \result == visit(ctx.comparisonExpression())
+     * @ensures ctx.NOT() != null && visit(ctx.comparisonExpression()).equals("BOOLEAN") ==>
+     *         \result.equals("BOOLEAN")
+     * @assignable \nothing
+     */
     @Override
     public Object visitNotExpression(EMJParser.NotExpressionContext ctx) {
         // S'il y a un NOT, c'est un booléen
@@ -370,6 +394,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite une expression de comparaison
+     * @param ctx Contexte de l'expression de comparaison
      * @requires ctx != null
      * @effects visite les expressions additives dans l'expression de comparaison
      *          vérifie que les opérandes des opérateurs de comparaison ont des types compatibles
@@ -410,6 +436,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
     /**
+     * Visite une expression additive
+     * @param ctx Contexte de l'expression additive
      * @requires ctx != null
      * @effects visite les expressions multiplicatives dans l'expression additive
      *          vérifie que les opérandes des opérateurs + et - sont de type INT
@@ -457,14 +485,17 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return hasTypeError ? "UNKNOWN" : "INT";
     }
 
-    /*@ requires ctx != null;
-       @ ensures ctx.unaryExpression().size() <= 1 ==> \result == visit(ctx.unaryExpression(0));
-       @ ensures ctx.unaryExpression().size() > 1 && ctx.DIV() != null &&
-       @         visit(ctx.unaryExpression(0)).equals("INT") &&
-       @         visit(ctx.unaryExpression(1)).equals("INT") ==>
-       @         \result.equals("INT");
-       @ assignable \nothing;
-       @*/
+    /**
+     * Visite une expression multiplicative (*, /)
+     * @param ctx Contexte de l'expression multiplicative
+     * @requires ctx != null
+     * @ensures ctx.unaryExpression().size() <= 1 ==> \result == visit(ctx.unaryExpression(0))
+     * @ensures ctx.unaryExpression().size() > 1 && ctx.DIV() != null &&
+     *         visit(ctx.unaryExpression(0)).equals("INT") &&
+     *         visit(ctx.unaryExpression(1)).equals("INT") ==>
+     *         \result.equals("INT")
+     * @assignable \nothing
+     */
     @Override
     public Object visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx) {
         Object leftObj = visit(ctx.unaryExpression(0));
@@ -547,12 +578,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return hasTypeError ? "UNKNOWN" : "INT";
     }
 
-    /*@ requires ctx != null;
-     @ ensures ctx.SUB() == null ==> \result == visit(ctx.primaryExpression());
-     @ ensures ctx.SUB() != null && visit(ctx.primaryExpression()).equals("INT") ==>
-     @         \result.equals("INT");
-     @ assignable \nothing;
-     @*/
+    /**
+     * Visite une expression unaire (-, +)
+     * @param ctx Contexte de l'expression unaire
+     * @requires ctx != null
+     * @ensures ctx.SUB() == null ==> \result == visit(ctx.primaryExpression())
+     * @ensures ctx.SUB() != null && visit(ctx.primaryExpression()).equals("INT") ==>
+     *         \result.equals("INT")
+     * @assignable \nothing
+     */
     @Override
     public Object visitUnaryExpression(EMJParser.UnaryExpressionContext ctx) {
         // S'il y a un - unaire, c'est un entier
@@ -564,15 +598,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return visit(ctx.primaryExpression());
     }
 
-    /*@ requires ctx != null;
-     @ ensures ctx.INT_LITERAL() != null ==> \result.equals("INT");
-     @ ensures ctx.TRUE() != null || ctx.FALSE() != null ==> \result.equals("BOOLEAN");
-     @ ensures ctx.EMOJI_ID() != null && symbolTable.lookup(ctx.EMOJI_ID().getText()) != null ==>
-     @         \result.equals(symbolTable.lookup(ctx.EMOJI_ID().getText()).getType());
-     @ ensures ctx.functionCall() != null ==> \result == visit(ctx.functionCall());
-     @ ensures ctx.expression() != null ==> \result == visit(ctx.expression());
-     @ assignable \nothing;
-     @*/
+    /**
+     * Visite une expression primaire (littéraux, identifiants, appels de fonction)
+     * @param ctx Contexte de l'expression primaire
+     * @requires ctx != null
+     * @ensures ctx.INT_LITERAL() != null ==> \result.equals("INT")
+     * @ensures ctx.TRUE() != null || ctx.FALSE() != null ==> \result.equals("BOOLEAN")
+     * @ensures ctx.EMOJI_ID() != null && symbolTable.lookup(ctx.EMOJI_ID().getText()) != null ==>
+     *         \result.equals(symbolTable.lookup(ctx.EMOJI_ID().getText()).getType())
+     * @ensures ctx.functionCall() != null ==> \result == visit(ctx.functionCall())
+     * @ensures ctx.expression() != null ==> \result == visit(ctx.expression())
+     * @assignable \nothing
+     * @return le type de l'expression primaire
+     */
     @Override
     public Object visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx) {
         if (ctx.INT_VALUE() != null) {
@@ -688,12 +726,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return "UNKNOWN";
     }
 
-    /*@ requires ctx != null;
-         @ ensures ctx.EMOJI_ID() != null && symbolTable.lookup(ctx.EMOJI_ID().getText()) != null ==>
-         @         \result.equals(symbolTable.lookup(ctx.EMOJI_ID().getText()).getType());
-         @ pure
-         @*/
-    // Méthode auxiliaire pour obtenir le type d'une expression gauche
+    /**
+     * Méthode auxiliaire pour obtenir le type d'une expression gauche
+     * @param ctx Contexte de l'expression gauche
+     * @requires ctx != null
+     * @ensures ctx.EMOJI_ID() != null && symbolTable.lookup(ctx.EMOJI_ID().getText()) != null ==>
+     *         \result.equals(symbolTable.lookup(ctx.EMOJI_ID().getText()).getType())
+     * @return Le type de l'expression gauche
+     * @pure
+     */
     private String getLeftExpressionType(EMJParser.LeftExpressionContext ctx) {
         String varId = ctx.EMOJI_ID().getText();
         EMJSymbolInfo info = symbolTable.lookup(varId);
@@ -729,9 +770,13 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
 
 
 
-    /*@ requires ctx != null;
-      @ assignable \nothing;
-      @*/ 
+    /**
+     * Visite une carte
+     * @param ctx Contexte de la carte
+     * @requires ctx != null
+     * @effects vérifie que la carte est valide
+     * @return null
+     */
     @Override
     public Object visitMapFile(EMJParser.MapFileContext ctx) {
         int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
@@ -799,9 +844,14 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return null;
     }
 
-/*@ requires ctx != null;
-      @ assignable \nothing;
-      @*/
+    /**
+     * Visite la fonction principale
+     * @param ctx Contexte de la fonction principale
+     * @requires ctx != null
+     * @modifies rien
+     * @effects visite la fonction principale du programme
+     * @return le résultat de la visite des enfants du nœud
+     */
     @Override
     public Object visitMainFunction(EMJParser.MainFunctionContext ctx) {
 
@@ -811,11 +861,17 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return result;
     }
 
-    /*@ requires ctx != null;
-    @ requires ctx.EMOJI_ID() != null;
-    @ ensures symbolTable.functionExists(ctx.EMOJI_ID().getText());
-    @ assignable \nothing;
-    @*/
+    /**
+     * Visite une déclaration de fonction
+     * @param ctx Contexte de la déclaration de fonction
+     * @requires ctx != null && ctx.EMOJI_ID() != null
+     * @modifies symbolTable
+     * @effects ajoute une nouvelle déclaration de fonction à la table des symboles
+     *          entre dans une nouvelle portée pour cette fonction
+     *          ajoute les paramètres de la fonction à la table des symboles
+     * @ensures symbolTable.functionExists(ctx.EMOJI_ID().getText())
+     * @return le résultat de la visite des enfants du nœud
+     */
     @Override
     public Object visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
         // Récupérer l'identifiant de la fonction
@@ -862,14 +918,17 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return result;
     }
 
-    /*@ requires ctx != null;
-    @ ensures \result != null;
-    @ ensures ctx.INT_TYPE() != null ==> \result.equals("INT");
-    @ ensures ctx.BOOLEAN_TYPE() != null ==> \result.equals("BOOLEAN");
-    @ ensures ctx.VOID_TYPE() != null ==> \result.equals("VOID");
-    @ pure
-    @*/
-    // Méthode auxiliaire pour obtenir le type à partir d'un contexte de type
+    /**
+     * Méthode auxiliaire pour obtenir le type à partir d'un contexte de type de retour
+     * 
+     * @param ctx Contexte de type de retour
+     * @requires ctx != null
+     * @modifies rien
+     * @return la chaîne de caractères représentant le type, jamais null
+     * @ensures si ctx.INT_TYPE() != null alors le résultat est "INT"
+     * @ensures si ctx.BOOLEAN_TYPE() != null alors le résultat est "BOOLEAN"
+     * @ensures si ctx.VOID_TYPE() != null alors le résultat est "VOID"
+     */
     private String getTypeFromContext(EMJParser.ReturnTypeContext ctx) {
         if (ctx.VOID_TYPE() != null) {
             return "VOID";
@@ -880,12 +939,18 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
 
-    /*@ requires ctx != null;
-   @ requires ctx.expression() != null;
-   @ ensures getExpressionType(ctx.expression()).equals("BOOLEAN") ||
-   @         errorLogger.hasErrors();
-   @ assignable \nothing;
-   @*/
+    /**
+     * Visite une instruction de boucle
+     *
+     * @param ctx Contexte de l'instruction de boucle
+     * @requires ctx != null && ctx.expression() != null
+     * @modifies symbolTable, errorLogger
+     * @effects entre dans une nouvelle portée "loop"
+     *          vérifie que l'expression de condition est de type BOOLEAN
+     *          ajoute une erreur si la condition n'est pas de type BOOLEAN
+     * @ensures getExpressionType(ctx.expression()).equals("BOOLEAN") || errorLogger.hasErrors()
+     * @return le résultat de la visite des enfants du nœud
+     */
     @Override
     public Object visitLoopStatement(EMJParser.LoopStatementContext ctx) {
 
@@ -904,9 +969,15 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
         return result;
     }
 
-      /*@ requires ctx != null;
-      @ assignable \nothing;
-      @*/
+    /**
+     * Visite un bloc de code
+     *
+     * @param ctx Contexte du bloc de code
+     * @requires ctx != null
+     * @modifies symbolTable
+     * @effects entre dans une nouvelle portée "block"
+     * @return le résultat de la visite des enfants du nœud
+     */
     @Override
     public Object visitBlock(EMJParser.BlockContext ctx) {
 
@@ -917,13 +988,19 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
 
-    /*@ requires ctx != null;
-    @ requires ctx.leftExpression() != null;
-    @ requires ctx.expression() != null;
-    @ ensures symbolTable.lookup(ctx.leftExpression().EMOJI_ID().getText()) != null ==>
-    @         symbolTable.lookup(ctx.leftExpression().EMOJI_ID().getText()).isInitialized();
-    @ assignable \nothing;
-    @*/
+    /**
+     * Visite une instruction d'affectation
+     *
+     * @param ctx Contexte de l'instruction d'affectation
+     * @requires ctx != null && ctx.leftExpression() != null && ctx.expression() != null
+     * @modifies errorLogger, symbolTable
+     * @effects vérifie que la variable à gauche est déclarée
+     *          vérifie que les types sont compatibles
+     *          marque la variable comme initialisée (si elle n'est pas une composante de tuple)
+     *          ajoute des erreurs au errorLogger si nécessaire
+     * @ensures si la variable est trouvée dans la table des symboles, elle est marquée comme initialisée
+     * @return null
+     */
     @Override
     public Object visitAssignment(EMJParser.AssignmentContext ctx) {
         EMJParser.LeftExpressionContext leftCtx = ctx.leftExpression();
@@ -958,6 +1035,8 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
     }
 
     /**
+     * Visite un appel de fonction
+     * @param ctx Contexte de l'appel de fonction
      * @requires ctx != null && ctx.EMOJI_ID() != null
      * @effects vérifie que la fonction appelée est déclarée dans la table des symboles
      *          vérifie que le nombre et les types des arguments correspondent aux paramètres déclarés
