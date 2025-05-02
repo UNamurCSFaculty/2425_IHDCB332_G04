@@ -1,0 +1,10 @@
+if {{condition}}:
+{{#each ifBody}}
+    {{{this}}}
+{{/each}}
+{{#if hasElse}}
+    else:
+    {{#each elseBody}}
+        {{{this}}}
+    {{/each}}
+{{/if}}
