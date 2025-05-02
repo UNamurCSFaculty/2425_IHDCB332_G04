@@ -1,27 +1,21 @@
 package be.unamur.info.b314.compiler.exception;
 
 /**
- * Exception class representing parsing errors.
- * @author James Ortiz - james.ortizvega@unamur.be
+ * @overview Exception lors d'erreurs d'analyse du code EMJ.
  */
-/*@ public invariant getMessage() != null;
-  @*/
 public class ParsingException extends Exception {
-
-    /*@ requires message != null;
-      @ requires e != null;
-      @ ensures getMessage().equals(message);
-      @ ensures getCause() == e;
-      @*/
-    public ParsingException(String message, Exception e) {
-        super(message, e);
+    
+    /**
+     * @effects this_post = nouvelle exception avec message spécifié
+     */
+    public ParsingException(String message) {
+        super(message);
     }
     
-    /*@ requires message != null;
-      @ ensures getMessage().equals(message);
-      @ ensures getCause() == null;
-      @*/
-    public ParsingException(String message){
-        super(message);
+    /**
+     * @effects this_post = nouvelle exception avec message et cause spécifiés
+     */
+    public ParsingException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

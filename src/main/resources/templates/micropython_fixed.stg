@@ -1,0 +1,117 @@
+/*
+ * Template group pour la génération de code MicroPython
+ * Utilisé par CodeGenVisitorST pour produire du code MicroPython
+ * à partir de l'AST EMJ
+ */
+
+// Utilitaires pour la gestion de l'indentation
+indent(code) ::= <<
+<code:{line | <if(line)>    <line><endif>}>
+>>
+
+// Templates pour les types
+mapType(type) ::= <<
+<if(type)><if(type=="INT")>int<elseif(type=="BOOL")>bool<elseif(type=="CHAR")>str<elseif(type=="STRING")>str<elseif(type=="TUPLE")>tuple<elseif(type=="VOID")>None<else>None<endif><endif>
+>>
+
+// Template pour le programme complet
+program(declarations, mainFunction) ::= <<
+# Code généré à partir d'un programme EMJ
+<declarations>
+
+<mainFunction>
+
+if __name__ == "__main__":
+    main()
+>>
+
+// Templates pour les déclarations
+varDecl(name, type, value) ::= <<
+<name> = <value>
+>>
+
+functionDecl(name, params, returnType, body) ::= <<
+def <name>(<params; separator=", ">):
+<indent(body)>
+>>
+
+// Template pour la fonction main
+mainFunction(body) ::= <<
+def main():
+<indent(body)>
+>>
+
+// Templates pour les paramètres
+parameter(name, type) ::= <<
+<name>
+>>
+
+// Templates pour les instructions
+ifStatement(condition, thenBlock, elseBlock) ::= <<
+if <condition>:
+<indent(thenBlock)>
+<if(elseBlock)>else:
+<indent(elseBlock)><endif>
+>>
+
+whileStatement(condition, block) ::= <<
+while <condition>:
+<indent(block)>
+>>
+
+returnStatement(expression) ::= <<
+return <expression>
+>>
+
+returnVoid() ::= <<
+return
+>>
+
+// Templates pour les expressions
+binaryOperation(left, operator, right) ::= <<
+<left> <operator> <right>
+>>
+
+unaryOperation(operator, expression) ::= <<
+<operator><expression>
+>>
+
+assignment(variable, value) ::= <<
+<variable> = <value>
+>>
+
+// Templates pour les appels de fonction
+functionCall(name, args) ::= <<
+<name>(<args; separator=", ">)
+>>
+
+// Templates pour les littéraux
+intLiteral(value) ::= <<
+<value>
+>>
+
+boolLiteral(value) ::= <<
+<value>
+>>
+
+charLiteral(value) ::= <<
+<value>
+>>
+
+stringLiteral(value) ::= <<
+<value>
+>>
+
+tupleLiteral(elements) ::= <<
+(<elements; separator=", ">)
+>>
+
+// Templates pour les blocs d'instructions
+block(statements) ::= <<
+<statements; separator="\n">
+>>
+
+// Templates pour le commentaire
+comment(text) ::= <<
+# <text>
+>>
