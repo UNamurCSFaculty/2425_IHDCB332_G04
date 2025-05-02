@@ -7,6 +7,7 @@ import be.unamur.info.b314.compiler.EMJParser;
 import static com.google.common.base.Preconditions.checkArgument;
 import java.io.*;
 
+import be.unamur.info.b314.compiler.emj.EMJCodeGenerator;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
 import be.unamur.info.b314.compiler.emj.EMJVisitor;
 import be.unamur.info.b314.compiler.exception.EMJErrorException;
@@ -22,6 +23,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+
 
 @SuppressWarnings("deprecation")
 
@@ -61,6 +67,7 @@ public class Main {
                     main.initialise(line);
                     main.compile(); // Call compile method (to be completed)
                     System.err.println("OK"); // Print OK on stderr
+                    main.generateMicroPython(line);
                 }
                 catch (Exception e) {
                     LOG.error("Exception occurred during compilation!", e);
@@ -197,6 +204,45 @@ public class Main {
 
         catch(Exception e) {
             throw e;
+        }
+    }
+
+    private void generateMicroPython(CommandLine line) throws IOException {
+
+        LOG.info("GENERATE MICRO PYTHON CODE:");
+
+       //Analyse syntaxique
+        EMJParser.RootContext pythonTree;
+        try {
+            EMJLexer lexer   = new EMJLexer(CharStreams.fromPath(inputFile.toPath()));
+            EMJParser parser = new EMJParser(new CommonTokenStream(lexer));
+
+            parser.removeErrorListeners();
+            MyConsoleErrorListener errListener = new MyConsoleErrorListener();
+            parser.addErrorListener(errListener);
+
+            pythonTree = parser.root();                      // on parse
+
+            if (errListener.errorHasBeenReported()) {
+                throw new IllegalArgumentException("Error while parsing input!");
+            }
+        } catch (Exception e) {
+            LOG.error("Error while parsing", e);
+            throw new IOException("Parsing failed", e);
+        }
+
+        // Génération MicroPython
+        EMJCodeGenerator generator = new EMJCodeGenerator();
+        String pythonCode = generator.generate(pythonTree);  // <= la méthode prévue
+
+        //Écriture du .py
+        if (line.hasOption(OUTPUT)) {
+            Path out = Paths.get(line.getOptionValue(OUTPUT));
+            Files.write(out, pythonCode.getBytes(StandardCharsets.UTF_8));
+            LOG.info("Python code written to {}", out.toAbsolutePath());
+        } else {
+            // aucun -o : on affiche simplement sur la sortie standard
+            System.out.println(pythonCode);
         }
     }
 
