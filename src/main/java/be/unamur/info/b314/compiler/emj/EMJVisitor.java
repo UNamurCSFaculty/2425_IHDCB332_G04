@@ -662,7 +662,7 @@ public class EMJVisitor extends be.unamur.info.b314.compiler.EMJParserBaseVisito
                         String.format("Integer value cannot start with 0: %s", intValue),
                         ctx.start.getLine()));
             }
-
+// TODO int max and int min not good
             try {
                 long val = Long.parseLong(intValue);
                 if (val > 1_000_000_000L) {
