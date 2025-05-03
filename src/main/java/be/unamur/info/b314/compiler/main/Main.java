@@ -7,9 +7,10 @@ import be.unamur.info.b314.compiler.EMJParser;
 import static com.google.common.base.Preconditions.checkArgument;
 import java.io.*;
 
+import be.unamur.info.b314.compiler.emj.Adapter.EMJVisitorAdapter;
 import be.unamur.info.b314.compiler.emj.EMJCodeGenerator;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
-import be.unamur.info.b314.compiler.emj.EMJVisitor;
+import be.unamur.info.b314.compiler.emj.Semantic.EMJSemanticVisitorImpl;
 import be.unamur.info.b314.compiler.exception.EMJErrorException;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -249,9 +250,10 @@ public class Main {
 
     private void visitTree(EMJParser.RootContext tree) throws EMJErrorException {
         // Visit tree
-        EMJVisitor visitor = new EMJVisitor();
+        EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
+        EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
         LOG.debug("Visiting");
-        visitor.visit(tree);
+        adapter.visit(tree);
         LOG.debug("Visiting: done");
 
         // If an error occurred during the tree visit, throw it
