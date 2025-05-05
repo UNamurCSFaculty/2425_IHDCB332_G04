@@ -48,6 +48,7 @@
     <properties>
         <!-- Project properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <license.licenseName>mit</license.licenseName>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
@@ -62,6 +63,7 @@
         <log4j.version>2.20.0</log4j.version>
         <slf4j.version>1.7.22</slf4j.version>
         <jts.version>1.18.1</jts.version>
+        <stringtemplate.version>4.3.4</stringtemplate.version>
         <!-- Maven plugins versions -->
         <antlr4-maven-plugin.version>${antlr.version}</antlr4-maven-plugin.version>
         <build-helper-maven-plugin.version>1.12</build-helper-maven-plugin.version>
@@ -110,6 +112,12 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
+        </dependency>
+        <!-- StringTemplate 4 pour la génération de code -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>ST4</artifactId>
+            <version>${stringtemplate.version}</version>
         </dependency>
     </dependencies>
     <build>

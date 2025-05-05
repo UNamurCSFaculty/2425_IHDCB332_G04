@@ -2,6 +2,7 @@ package be.unamur.info.b314.compiler.emj.CodeGeneration;
 
 import be.unamur.info.b314.compiler.EMJParser;
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
+import org.stringtemplate.v4.ST;
 
 import java.util.Map;
 
@@ -9,16 +10,16 @@ public interface EMJCodeGenVisitor {
     // Program structure
     ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx);
     ContextResult visitMapFile(EMJParser.MapFileContext ctx);
-    ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx);
+    ST visitMainFunction(EMJParser.MainFunctionContext ctx);
 
     // Declarations
-    ContextResult visitFunctionDecl(EMJParser.FunctionDeclContext ctx);
+    ST visitFunctionDecl(EMJParser.FunctionDeclContext ctx);
     ContextResult visitVarDecl(EMJParser.VarDeclContext ctx);
 
     // Statements
-    ContextResult visitBlock(EMJParser.BlockContext ctx);
-    ContextResult visitIfStatement(EMJParser.IfStatementContext ctx);
-    ContextResult visitLoopStatement(EMJParser.LoopStatementContext ctx);
+    ST visitBlock(EMJParser.BlockContext ctx);
+    ST visitIfStatement(EMJParser.IfStatementContext ctx);
+    ST visitLoopStatement(EMJParser.LoopStatementContext ctx);
     ContextResult visitAssignment(EMJParser.AssignmentContext ctx);
 
     // Expressions
