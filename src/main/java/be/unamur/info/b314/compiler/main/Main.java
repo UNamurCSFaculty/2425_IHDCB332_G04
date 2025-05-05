@@ -8,6 +8,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.io.*;
 
 import be.unamur.info.b314.compiler.emj.Adapter.EMJVisitorAdapter;
+import be.unamur.info.b314.compiler.emj.CodeGeneration.EMJCodeGenVisitorImpl;
 import be.unamur.info.b314.compiler.emj.EMJCodeGenerator;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
 import be.unamur.info.b314.compiler.emj.Semantic.EMJSemanticVisitorImpl;
@@ -24,6 +25,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
@@ -232,19 +237,17 @@ public class Main {
             throw new IOException("Parsing failed", e);
         }
 
-        // Génération MicroPython
-        EMJCodeGenerator generator = new EMJCodeGenerator();
-        String pythonCode = generator.generate(pythonTree);  // <= la méthode prévue
+        STGroup templates = new STGroupFile("micropython.stg");
 
-        //Écriture du .py
-        if (line.hasOption(OUTPUT)) {
-            Path out = Paths.get(line.getOptionValue(OUTPUT));
-            Files.write(out, pythonCode.getBytes(StandardCharsets.UTF_8));
-            LOG.info("Python code written to {}", out.toAbsolutePath());
-        } else {
-            // aucun -o : on affiche simplement sur la sortie standard
-            System.out.println(pythonCode);
-        }
+        EMJCodeGenVisitorImpl visitor = new EMJCodeGenVisitorImpl(templates);
+        ST outputCode = visitor.visit(pythonTree);
+
+        String code = outputCode.render();
+
+//        try (PrintWriter out = new PrintWriter(outputFile)) {
+//            out.println(code);
+//        }
+        System.out.printf("Code généré : \n```%s```%n", code);
     }
 
 

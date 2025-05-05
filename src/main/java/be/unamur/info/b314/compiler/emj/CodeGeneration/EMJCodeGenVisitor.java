@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface EMJCodeGenVisitor {
     // Program structure
-    ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx);
+    ST visitProgramFile(EMJParser.ProgramFileContext ctx);
     ContextResult visitMapFile(EMJParser.MapFileContext ctx);
     ST visitMainFunction(EMJParser.MainFunctionContext ctx);
 
@@ -20,7 +20,7 @@ public interface EMJCodeGenVisitor {
     ST visitBlock(EMJParser.BlockContext ctx);
     ST visitIfStatement(EMJParser.IfStatementContext ctx);
     ST visitLoopStatement(EMJParser.LoopStatementContext ctx);
-    ContextResult visitAssignment(EMJParser.AssignmentContext ctx);
+    ST visitAssignment(EMJParser.AssignmentContext ctx);
 
     // Expressions
     ContextResult visitExpression(EMJParser.ExpressionContext ctx);
@@ -32,7 +32,7 @@ public interface EMJCodeGenVisitor {
     ContextResult visitMultiplicativeExpression(EMJParser.MultiplicativeExpressionContext ctx);
     ContextResult visitUnaryExpression(EMJParser.UnaryExpressionContext ctx);
     ContextResult visitPrimaryExpression(EMJParser.PrimaryExpressionContext ctx);
-    ContextResult visitFunctionCall(EMJParser.FunctionCallContext ctx);
+    ST visitFunctionCall(EMJParser.FunctionCallContext ctx);
 
     // Template rendering
     String renderTemplate(ContextResult context);

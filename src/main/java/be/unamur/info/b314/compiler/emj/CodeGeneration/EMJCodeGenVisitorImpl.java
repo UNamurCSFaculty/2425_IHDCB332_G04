@@ -1,37 +1,43 @@
 package be.unamur.info.b314.compiler.emj.CodeGeneration;
 
 import be.unamur.info.b314.compiler.EMJParser;
-import be.unamur.info.b314.compiler.emj.EMJSymbolTable;
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Template;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupFile;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class EMJCodeGenVisitorImpl extends AbstractParseTreeVisitor<ST> implements EMJCodeGenVisitor {
     private static final String LINE_BREAK = "\n";
     private static final String COMMA = ",";
-    private final EMJSymbolTable symbolTable;
-    private final Map<String, Template> templates;
-    private final STGroup templateGroup;
-    //private final Handlebars handlebars;
 
-    public EMJCodeGenVisitorImpl(EMJSymbolTable symbolTable) {
-        this.symbolTable = symbolTable;
-        this.templates = new HashMap<>();
-        templateGroup = new STGroupFile("micropython.stg");
+    private final STGroup templateGroup;
+
+    public EMJCodeGenVisitorImpl(STGroup templateGroup) {
+        this.templateGroup = templateGroup;
     }
 
     @Override
-    public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
+    public ST visitProgramFile(EMJParser.ProgramFileContext ctx) {
         ST programTemplate = templateGroup.getInstanceOf("program");
-        //TODO
-        return null;
+        if (ctx.importStatement() != null) {
+            programTemplate.add("importStt", visit(ctx.importStatement()).render());
+        }
+        programTemplate.add("mainFunction", visit(ctx.mainFunction()).render());
+        if (ctx.functionDecl() != null && !ctx.functionDecl().isEmpty()) {
+            StringBuilder functionsSb = new StringBuilder();
+            for (EMJParser.FunctionDeclContext funct : ctx.functionDecl()) {
+                ST funcCode = visit(funct);
+                functionsSb.append(funcCode.render()).append(LINE_BREAK);
+            }
+            programTemplate.add("functions", functionsSb.toString());
+        }
+        if (ctx.statement() != null && !ctx.statement().isEmpty()) {
+            programTemplate.add("statements", getStatementsAsStr(ctx.statement()));
+        }
+        return programTemplate;
     }
 
     @Override
@@ -44,7 +50,6 @@ public class EMJCodeGenVisitorImpl extends AbstractParseTreeVisitor<ST> implemen
         ST mainTemplate = templateGroup.getInstanceOf("mainFunction");
         mainTemplate.add("body", getStatementsAsStr(ctx.statement()));
         return mainTemplate;
-//        return ContextResult.valid(null,"mainFunction"); //???? Comment ça marche ???
     }
 
     @Override
@@ -78,7 +83,7 @@ public class EMJCodeGenVisitorImpl extends AbstractParseTreeVisitor<ST> implemen
     @Override
     public ST visitBlock(EMJParser.BlockContext ctx) {
         ST blockSttTemplate = templateGroup.getInstanceOf("block");
-        blockSttTemplate.add("body",getStatementsAsStr(ctx.statement()));
+        blockSttTemplate.add("body", getStatementsAsStr(ctx.statement()));
         return blockSttTemplate;
     }
 
@@ -111,8 +116,11 @@ public class EMJCodeGenVisitorImpl extends AbstractParseTreeVisitor<ST> implemen
     }
 
     @Override
-    public ContextResult visitAssignment(EMJParser.AssignmentContext ctx) {
-        return null;
+    public ST visitAssignment(EMJParser.AssignmentContext ctx) {
+        ST assignmentTemplate = templateGroup.getInstanceOf("assignment");
+        assignmentTemplate.add("leftExpression", visit(ctx.leftExpression()).render());
+        assignmentTemplate.add("value", visit(ctx.expression()).render());
+        return assignmentTemplate;
     }
 
     @Override
@@ -161,8 +169,18 @@ public class EMJCodeGenVisitorImpl extends AbstractParseTreeVisitor<ST> implemen
     }
 
     @Override
-    public ContextResult visitFunctionCall(EMJParser.FunctionCallContext ctx) {
-        return null;
+    public ST visitFunctionCall(EMJParser.FunctionCallContext ctx) {
+        ST functionCallTemplate = templateGroup.getInstanceOf("loopStatement");
+        functionCallTemplate.add("functionId", visit(ctx.EMOJI_ID()).render());
+        if (ctx.argumentList() != null && !ctx.argumentList().isEmpty()) {
+            StringBuilder argSb = new StringBuilder();
+            for (EMJParser.ExpressionContext arg : ctx.argumentList().expression()) {
+                ST argCode = visit(arg);
+                argSb.append(argCode.render()).append(COMMA);
+            }
+            functionCallTemplate.add("argumentList", argSb.toString());
+        }
+        return functionCallTemplate;
     }
 
     @Override
