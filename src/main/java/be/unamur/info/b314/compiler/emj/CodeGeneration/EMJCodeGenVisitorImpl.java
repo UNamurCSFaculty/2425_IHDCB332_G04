@@ -24,7 +24,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public EMJCodeGenVisitorImpl() {
     }
 
-    private static final Map<String, String> emojiShortNames = new HashMap<>();
+
+     private static final Map<String, String> emojiShortNames = new HashMap<>();
 
     static {
         emojiShortNames.put("🚗", "car");
@@ -47,23 +48,58 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         emojiShortNames.put("⛔", "not");
         emojiShortNames.put("📦", "package");
         emojiShortNames.put("🏠", "main");
+        emojiShortNames.put("🚔", "cop");
+        emojiShortNames.put("🛣️", "road");
+        emojiShortNames.put("🌋", "volcano");
+        emojiShortNames.put("🏘️", "house");
+        emojiShortNames.put("🚧", "barrier");
+        emojiShortNames.put("🚜", "tractor");
+        emojiShortNames.put("🌊", "water");
+        //emojiShortNames.put("🐜", "ant"); // si utilisé
         // Ajoute d'autres emojis si nécessaire
     }
+
+
+//    @Override
+//    public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
+//        Map<String, Object> attributes = new HashMap<>();
+//
+//        //Génération de la fonction main
+//        ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
+//        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
+//        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
+//            mainTemplate.add(entry.getKey(), entry.getValue());
+//        }
+//        attributes.put("mainFunction", mainTemplate.render());
+//
+//        //Génération des fonctions utilisateur
+//        List<String> renderedFunctions = new ArrayList<>();
+//        if (ctx.functionDecl() != null) {
+//            for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
+//                ContextResult funcResult = (ContextResult) visit(funcCtx);
+//                ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
+//                for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
+//                    funcTemplate.add(entry.getKey(), entry.getValue());
+//                }
+//                renderedFunctions.add(funcTemplate.render());
+//            }
+//        }
+//        attributes.put("functions", renderedFunctions);
+//
+//        //On retourne un ContextResult de type "program" pour le template principal
+//        return ContextResult.valid(attributes, "program");
+//    }
 
 
     @Override
     public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
-        //Génération de la fonction main
+        // Génère les instructions principales (ex-main)
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
-        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
-            mainTemplate.add(entry.getKey(), entry.getValue());
-        }
-        attributes.put("mainFunction", mainTemplate.render());
+        attributes.put("body", mainResult.getAttributes().get("body")); // note : body est une List<String>
 
-        //Génération des fonctions utilisateur
+        // Génère les fonctions utilisateur
         List<String> renderedFunctions = new ArrayList<>();
         if (ctx.functionDecl() != null) {
             for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
@@ -77,16 +113,50 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         }
         attributes.put("functions", renderedFunctions);
 
-        //On retourne un ContextResult de type "program" pour le template principal
         return ContextResult.valid(attributes, "program");
     }
 
 
 
+
+
+
     @Override
     public ContextResult visitMapFile(EMJParser.MapFileContext ctx) {
-        return null;
+        Map<String, Object> attributes = new HashMap<>();
+
+        int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
+        int height = Integer.parseInt(ctx.INT_VALUE(1).getText());
+
+        // Nettoie l'orientation (⬆️ -> up, etc.)
+        String orientation = sanitizeEmoji(ctx.orientation().getText());
+
+        // Construction des lignes de la carte
+        List<String> mapLines = new ArrayList<>();
+        int index = 0;
+        for (int i = 0; i < height; i++) {
+            StringBuilder row = new StringBuilder();
+            for (int j = 0; j < width; j++) {
+                EMJParser.MapCellContext cellCtx = ctx.mapCell(index++);
+                String emoji = cellCtx.getText();
+                String cleaned = emojiShortNames.getOrDefault(emoji, "unknown");
+                row.append(cleaned);
+            }
+            mapLines.add("\"" + row.toString() + "\"");
+
+        }
+
+        attributes.put("width", width);
+        attributes.put("height", height);
+        attributes.put("orientation", orientation);
+        attributes.put("map", mapLines); // List<String>, dans le template avec wrap="\""
+
+        return ContextResult.valid(attributes, "map_program");
     }
+
+
+
+
 
     @Override
     public ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx) {

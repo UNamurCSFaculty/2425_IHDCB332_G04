@@ -7,19 +7,15 @@
 
 // Template pour le programme complet
 
-program(mainFunction, functions = []) ::= <<
+program(functions, body) ::= <<
 # Code généré à partir d'un programme EMJ
 from microbit import *
-import cutebot
 <if(functions)>
-# User defined functions
+# Fonctions utilisateur
 <functions; separator="\n\n">
 <endif>
 
-<mainFunction>
-
-if __name__ == "__main__":
-    main()
+<body; separator="\n">
 >>
 
 // Template pour la fonction principale
@@ -41,3 +37,28 @@ mapType ::= [
 
 // Templates pour les déclarations de variables
 var_decl(name, type, value, indent) ::= "<indent><name> = <value>"
+
+
+// Template principal pour un fichier de carte
+map_program(width, height, orientation, map) ::= <<
+# Carte générée à partir d'un fichier EMJ (.map)
+
+# Dimensions
+width = <width>
+height = <height>
+orientation = "<orientation>"
+
+# Carte (chaîne de caractères ligne par ligne)
+map_data = [
+    <map; separator=",\n">
+
+]
+>>
+
+
+
+
+
+
+    // ... autres méthodes ...
+
