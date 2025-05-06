@@ -2,17 +2,13 @@ package be.unamur.info.b314.compiler.emj.CodeGeneration;
 
 import be.unamur.info.b314.compiler.EMJParser;
 import be.unamur.info.b314.compiler.EMJParserBaseVisitor;
-import be.unamur.info.b314.compiler.emj.EMJSymbolTable;
 import be.unamur.info.b314.compiler.emj.EMJVarType;
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implements EMJCodeGenVisitor {
     private STGroup templates;
@@ -25,7 +21,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     }
 
 
-     private static final Map<String, String> emojiShortNames = new HashMap<>();
+    private static final Map<String, String> emojiShortNames = new HashMap<>();
 
     static {
         emojiShortNames.put("🚗", "car");
@@ -59,51 +55,27 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         // Ajoute d'autres emojis si nécessaire
     }
 
-
-//    @Override
-//    public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
-//        Map<String, Object> attributes = new HashMap<>();
-//
-//        //Génération de la fonction main
-//        ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-//        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
-//        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
-//            mainTemplate.add(entry.getKey(), entry.getValue());
-//        }
-//        attributes.put("mainFunction", mainTemplate.render());
-//
-//        //Génération des fonctions utilisateur
-//        List<String> renderedFunctions = new ArrayList<>();
-//        if (ctx.functionDecl() != null) {
-//            for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
-//                ContextResult funcResult = (ContextResult) visit(funcCtx);
-//                ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
-//                for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
-//                    funcTemplate.add(entry.getKey(), entry.getValue());
-//                }
-//                renderedFunctions.add(funcTemplate.render());
-//            }
-//        }
-//        attributes.put("functions", renderedFunctions);
-//
-//        //On retourne un ContextResult de type "program" pour le template principal
-//        return ContextResult.valid(attributes, "program");
-//    }
-
-
     @Override
     public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
         // Génère les instructions principales (ex-main)
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        attributes.put("body", mainResult.getAttributes().get("body")); // note : body est une List<String>
+        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
+        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
+            mainTemplate.add(entry.getKey(), entry.getValue());
+        }
+        attributes.put("body", mainTemplate); // note : body est une List<String>
 
         // Génère les fonctions utilisateur
         List<String> renderedFunctions = new ArrayList<>();
         if (ctx.functionDecl() != null) {
             for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
+
+                incrIndent();
                 ContextResult funcResult = (ContextResult) visit(funcCtx);
+                decrIndent();
+
                 ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
                 for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
                     funcTemplate.add(entry.getKey(), entry.getValue());
@@ -115,11 +87,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
         return ContextResult.valid(attributes, "program");
     }
-
-
-
-
-
 
     @Override
     public ContextResult visitMapFile(EMJParser.MapFileContext ctx) {
@@ -143,7 +110,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 row.append(cleaned);
             }
             mapLines.add("\"" + row.toString() + "\"");
-
         }
 
         attributes.put("width", width);
@@ -154,15 +120,12 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         return ContextResult.valid(attributes, "map_program");
     }
 
-
-
-
-
     @Override
     public ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
         List<String> bodyLines = new ArrayList<>();
 
+        incrIndent();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
             ContextResult result = (ContextResult) visit(stmtCtx);
             if (result.isValid()) {
@@ -173,11 +136,11 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 bodyLines.add(subTemplate.render());
             }
         }
+        decrIndent();
 
         attributes.put("body", bodyLines);
         return ContextResult.valid(attributes, "mainFunction");
     }
-
 
     @Override
     public ContextResult visitStatement(EMJParser.StatementContext ctx) {
@@ -201,10 +164,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         return ContextResult.invalid();
     }
 
-
-
-
-
     @Override
     public ContextResult visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
 //        ST funcDeclTemplate = templateGroup.getInstanceOf("functionDecl");
@@ -226,10 +185,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public ContextResult visitVarDecl(EMJParser.VarDeclContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
-        // Nettoyer l'emoji pour créer un nom de variable Python valide
-        String rawName = ctx.EMOJI_ID().getText().replaceAll("[\\[\\]]", "");
-
-        String varName = sanitizeEmoji(rawName);
+        String varName = sanitizeEmoji(ctx.EMOJI_ID().getText());
         attributes.put("name", varName);
 
         // Obtenir le type
@@ -265,8 +221,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         attributes.put("indent", getIndent());
         return ContextResult.valid(attributes, "var_decl");
     }
-
-
 
     @Override
     public ContextResult visitBlock(EMJParser.BlockContext ctx) {
@@ -377,6 +331,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         }
         return ContextResult.valid(attributes, "primary_expression");
     }
+
     @Override
     public ContextResult visitFunctionCall(EMJParser.FunctionCallContext ctx) {
 //        ST functionCallTemplate = templateGroup.getInstanceOf("loopStatement");
@@ -434,42 +389,36 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     }
 
     private String getTypeFromContext(EMJParser.TypeContext typeCtx) {
-        if (typeCtx == null) return EMJVarType.UNKNOWN.label();
+        if (typeCtx == null) return EMJVarType.UNKNOWN.pyLabel();
         if (typeCtx.INT_TYPE() != null) {
-            return EMJVarType.INT.label();
+            return EMJVarType.INT.pyLabel();
         }
         if (typeCtx.BOOL_TYPE() != null) {
-            return EMJVarType.BOOL.label();
+            return EMJVarType.BOOL.pyLabel();
         }
         if (typeCtx.CHAR_TYPE() != null) {
-            return EMJVarType.CHAR.label();
+            return EMJVarType.CHAR.pyLabel();
         }
         if (typeCtx.STRING_TYPE() != null) {
-            return EMJVarType.STRING.label();
+            return EMJVarType.STRING.pyLabel();
         }
         if (typeCtx.tupleType() != null) {
             EMJParser.TupleTypeContext tupleCtx = typeCtx.tupleType();
             String innerType = getTypeFromContext(tupleCtx.type());
-            if (innerType.equals(EMJVarType.UNKNOWN.label())) {
-                return EMJVarType.UNKNOWN.label();//TODO : on autorise "Tuple(UNKNOWN)" ? si oui, enlever ce if
+            if (innerType.equals(EMJVarType.UNKNOWN.pyLabel())) {
+                return EMJVarType.UNKNOWN.pyLabel();//TODO : on autorise "Tuple(UNKNOWN)" ? si oui, enlever ce if
             }
-            return String.format("%s(%s)", EMJVarType.TUPLE.label(), innerType);
+            return String.format("%s(%s)", EMJVarType.TUPLE.pyLabel(), innerType);
         }
-        return EMJVarType.UNKNOWN.label();
+        return EMJVarType.UNKNOWN.pyLabel();
     }
 
-
-//    private String sanitizeEmoji(String emoji) {
-//        if (emojiShortNames.containsKey(emoji)) {
-//            return emojiShortNames.get(emoji);
-//        }
-//        // Fallback : remplace les caractères Unicode non valides en identifiants valides
-//        return "emoji_" + Math.abs(emoji.hashCode());
-//    }
-
     private String sanitizeEmoji(String emoji) {
+        // Nettoyer l'emoji pour créer un nom de variable Python valide
+        String rawName = emoji.replaceAll("[\\[\\]]", "");
+
         // Supprime les variation selectors (comme U+FE0F)
-        String normalized = emoji.replaceAll("\\p{M}|\\uFE0F", "");
+        String normalized = rawName.replaceAll("\\p{M}|\\uFE0F", "");
 
         if (emojiShortNames.containsKey(normalized)) {
             return emojiShortNames.get(normalized);
@@ -477,6 +426,14 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         return "emoji_" + Math.abs(emoji.hashCode());
     }
 
+    private void incrIndent() {
+        this.indentLevel += 1;
+    }
 
-
+    private void decrIndent() throws IllegalStateException {
+        if (this.indentLevel <= 0) {
+            throw new IllegalStateException(String.format("YOU SHALL NOT DECREMENT INDENT (indentLvl :%d)", this.indentLevel));
+        }
+        this.indentLevel -= 1;
+    }
 }
