@@ -9,8 +9,8 @@ import java.io.*;
 
 import be.unamur.info.b314.compiler.emj.Adapter.EMJVisitorAdapter;
 import be.unamur.info.b314.compiler.emj.CodeGeneration.EMJCodeGenVisitorImpl;
-import be.unamur.info.b314.compiler.emj.EMJCodeGenerator;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
+import be.unamur.info.b314.compiler.emj.Result.ContextResult;
 import be.unamur.info.b314.compiler.emj.Semantic.EMJSemanticVisitorImpl;
 import be.unamur.info.b314.compiler.exception.EMJErrorException;
 import org.antlr.v4.runtime.CharStreams;
@@ -25,14 +25,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stringtemplate.v4.ST;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupFile;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
 
 
 @SuppressWarnings("deprecation")
@@ -237,17 +229,16 @@ public class Main {
             throw new IOException("Parsing failed", e);
         }
 
-        STGroup templates = new STGroupFile("micropython.stg");
 
-        EMJCodeGenVisitorImpl visitor = new EMJCodeGenVisitorImpl(templates);
-        ST outputCode = visitor.visit(pythonTree);
+        EMJCodeGenVisitorImpl codeGenvisitor = new EMJCodeGenVisitorImpl();
+        codeGenvisitor.loadTemplates("micropython.stg");
+        ContextResult programResult = (ContextResult) codeGenvisitor.visit(pythonTree);
+        String generatedCode = codeGenvisitor.generateCode(programResult);
 
-        String code = outputCode.render();
-
-//        try (PrintWriter out = new PrintWriter(outputFile)) {
-//            out.println(code);
-//        }
-        System.out.printf("Code généré : \n```%s```%n", code);
+        try (PrintWriter out = new PrintWriter(outputFile)) {
+            out.println(generatedCode);
+        }
+        System.out.printf("Code généré : \n```%s```%n", generatedCode);
     }
 
 

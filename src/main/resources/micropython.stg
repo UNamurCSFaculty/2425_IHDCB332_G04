@@ -7,9 +7,14 @@
 // Template pour le programme complet
 program(declarations, mainFunction) ::= <<
 # Code généré à partir d'un programme EMJ
-<declarations>
+from microbit import *
+import cutebot
+<if(functions)>
+# User defined functions
+<functions; separator="\n\n">
+<endif>
 
-<mainFunction>
+<main>
 
 if __name__ == "__main__":
     main()
@@ -27,92 +32,4 @@ mapType ::= [
 ]
 
 // Templates pour les déclarations
-varDecl(n, type, value) ::= <<
-<n> = <value>
->>
-
-functionDecl(n, params, returnType, body) ::= <<
-def <n>(<params; separator=", ">):
-<body; separator="\n">
->>
-
-// Template pour la fonction main
-mainFunction(body) ::= <<
-def main():
-<body; separator="\n">
->>
-
-// Templates pour les paramètres
-parameter(n, type) ::= <<
-<n>
->>
-
-// Templates pour les instructions
-ifStatement(condition, thenBlock, elseBlock) ::= <<
-if <condition>:
-    <thenBlock; separator="\n    ">
-<if(elseBlock)>else:
-    <elseBlock; separator="\n    "><endif>
->>
-
-whileStatement(condition, block) ::= <<
-while <condition>:
-    <block; separator="\n    ">
->>
-
-returnStatement(expression) ::= <<
-return <expression>
->>
-
-returnVoid() ::= <<
-return
->>
-
-// Templates pour les expressions
-binaryOperation(left, operator, right) ::= <<
-<left> <operator> <right>
->>
-
-unaryOperation(operator, expression) ::= <<
-<operator><expression>
->>
-
-assignment(variable, value) ::= <<
-<variable> = <value>
->>
-
-// Templates pour les appels de fonction
-functionCall(n, args) ::= <<
-<n>(<args; separator=", ">)
->>
-
-// Templates pour les littéraux
-intLiteral(value) ::= <<
-<value>
->>
-
-boolLiteral(value) ::= <<
-<value>
->>
-
-charLiteral(value) ::= <<
-<value>
->>
-
-stringLiteral(value) ::= <<
-<value>
->>
-
-tupleLiteral(elements) ::= <<
-(<elements; separator=", ">)
->>
-
-// Templates pour les blocs d'instructions
-block(statements) ::= <<
-<statements; separator="\n">
->>
-
-// Templates pour le commentaire
-comment(text) ::= <<
-# <text>
->>
+var_decl(name, type, value, indent) ::= "<indent><name> = <value>"
