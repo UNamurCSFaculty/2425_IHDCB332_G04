@@ -24,31 +24,64 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public EMJCodeGenVisitorImpl() {
     }
 
+    private static final Map<String, String> emojiShortNames = new HashMap<>();
+
+    static {
+        emojiShortNames.put("🚗", "car");
+        emojiShortNames.put("🦹", "thief");
+        emojiShortNames.put("📻", "radio");
+        emojiShortNames.put("🚨", "light");
+        emojiShortNames.put("⬆️", "up");
+        emojiShortNames.put("⬇️", "down");
+        emojiShortNames.put("➡️", "right");
+        emojiShortNames.put("⬅️", "left");
+        emojiShortNames.put("🛑", "stop");
+        emojiShortNames.put("🔢", "int");
+        emojiShortNames.put("🔟", "bool");
+        emojiShortNames.put("🔣", "char");
+        emojiShortNames.put("🔡", "str");
+        emojiShortNames.put("🌀", "void");
+        emojiShortNames.put("↩️", "return");
+        emojiShortNames.put("❓", "or");
+        emojiShortNames.put("🤝", "and");
+        emojiShortNames.put("⛔", "not");
+        emojiShortNames.put("📦", "package");
+        emojiShortNames.put("🏠", "main");
+        // Ajoute d'autres emojis si nécessaire
+    }
+
+
     @Override
     public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
-
-//        if (ctx.importStatement() != null) {
-//            programTemplate.add("importStt", visit(ctx.importStatement()).render());
-//        }
-//        programTemplate.add("mainFunction", visit(ctx.mainFunction()).render());
-        // Main function
+        //Génération de la fonction main
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        attributes.put("main", mainResult.getAttributes());
+        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
+        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
+            mainTemplate.add(entry.getKey(), entry.getValue());
+        }
+        attributes.put("mainFunction", mainTemplate.render());
 
-        // function
-        if (ctx.functionDecl() != null && !ctx.functionDecl().isEmpty()) {
-            List<Object> functions = new ArrayList<>();
+        //Génération des fonctions utilisateur
+        List<String> renderedFunctions = new ArrayList<>();
+        if (ctx.functionDecl() != null) {
             for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
                 ContextResult funcResult = (ContextResult) visit(funcCtx);
-                functions.add(funcResult.getAttributes());
+                ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
+                for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
+                    funcTemplate.add(entry.getKey(), entry.getValue());
+                }
+                renderedFunctions.add(funcTemplate.render());
             }
-            attributes.put("functions", functions);
         }
+        attributes.put("functions", renderedFunctions);
 
+        //On retourne un ContextResult de type "program" pour le template principal
         return ContextResult.valid(attributes, "program");
     }
+
+
 
     @Override
     public ContextResult visitMapFile(EMJParser.MapFileContext ctx) {
@@ -58,23 +91,50 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
-        // Visit all statements in the main function
-        List<ContextResult> statementResults = new ArrayList<>();
+        List<String> bodyLines = new ArrayList<>();
+
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
-            statementResults.add((ContextResult) visit(stmtCtx));
+            ContextResult result = (ContextResult) visit(stmtCtx);
+            if (result.isValid()) {
+                ST subTemplate = templates.getInstanceOf(result.getTemplateName());
+                for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
+                    subTemplate.add(entry.getKey(), entry.getValue());
+                }
+                bodyLines.add(subTemplate.render());
+            }
         }
 
-        // Combine the statements
-        ContextResult bodyResult = ContextResult.combine("block", statementResults, "statements");
-        attributes.put("body", bodyResult.getAttributes().get("statements"));
+        attributes.put("body", bodyLines);
+        return ContextResult.valid(attributes, "mainFunction");
+    }
 
-        return ContextResult.valid(attributes, "main_function");
-    }
+
     @Override
-    public ContextResult visitStatement(EMJParser.StatementContext ctx)
-    {
-        return (ContextResult) visit(ctx.varDecl());
+    public ContextResult visitStatement(EMJParser.StatementContext ctx) {
+        if (ctx.varDecl() != null) {
+            return (ContextResult) visit(ctx.varDecl());
+        } else if (ctx.assignment() != null) {
+            return (ContextResult) visit(ctx.assignment());
+        } else if (ctx.functionCallStmt() != null) {
+            return (ContextResult) visit(ctx.functionCallStmt());
+        } else if (ctx.ifStatement() != null) {
+            return (ContextResult) visit(ctx.ifStatement());
+        } else if (ctx.loopStatement() != null) {
+            return (ContextResult) visit(ctx.loopStatement());
+        } else if (ctx.returnStatement() != null) {
+            // tu peux gérer plus tard si tu veux générer du code Python avec return
+            return ContextResult.invalid(); // ou visite réelle si tu veux
+        } else if (ctx.predefinedStmt() != null) {
+            return (ContextResult) visit(ctx.predefinedStmt()); // à implémenter si nécessaire
+        }
+
+        return ContextResult.invalid();
     }
+
+
+
+
+
     @Override
     public ContextResult visitFunctionDecl(EMJParser.FunctionDeclContext ctx) {
 //        ST funcDeclTemplate = templateGroup.getInstanceOf("functionDecl");
@@ -96,23 +156,23 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public ContextResult visitVarDecl(EMJParser.VarDeclContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
+        // Nettoyer l'emoji pour créer un nom de variable Python valide
+        String rawName = ctx.EMOJI_ID().getText().replaceAll("[\\[\\]]", "");
 
-        // Get variable name
-        String varName = (ctx.EMOJI_ID().getText());
+        String varName = sanitizeEmoji(rawName);
         attributes.put("name", varName);
 
-        // Get variable type
+        // Obtenir le type
         String typeResult = getTypeFromContext(ctx.type());
-        attributes.put("type", getTypeFromContext(ctx.type()));
+        attributes.put("type", typeResult);
 
-        // Get initial value if present
+        // Gérer la valeur initiale
         if (ctx.expression() != null) {
             ContextResult exprResult = (ContextResult) visit(ctx.expression());
             attributes.put("value", exprResult.getAttributes().get("code"));
         } else {
-            // Default values based on type
-            String type = typeResult;
-            switch (type) {
+            // Valeur par défaut selon le type
+            switch (typeResult) {
                 case "int":
                     attributes.put("value", "0");
                     break;
@@ -120,13 +180,11 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                     attributes.put("value", "False");
                     break;
                 case "str":
-                    attributes.put("value", "\"\"");
-                    break;
                 case "char":
                     attributes.put("value", "\"\"");
                     break;
                 default:
-                    if (type.startsWith("tuple")) {
+                    if (typeResult.startsWith("tuple")) {
                         attributes.put("value", "(None, None)");
                     } else {
                         attributes.put("value", "None");
@@ -137,6 +195,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         attributes.put("indent", getIndent());
         return ContextResult.valid(attributes, "var_decl");
     }
+
+
 
     @Override
     public ContextResult visitBlock(EMJParser.BlockContext ctx) {
@@ -327,4 +387,26 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         }
         return EMJVarType.UNKNOWN.label();
     }
+
+
+//    private String sanitizeEmoji(String emoji) {
+//        if (emojiShortNames.containsKey(emoji)) {
+//            return emojiShortNames.get(emoji);
+//        }
+//        // Fallback : remplace les caractères Unicode non valides en identifiants valides
+//        return "emoji_" + Math.abs(emoji.hashCode());
+//    }
+
+    private String sanitizeEmoji(String emoji) {
+        // Supprime les variation selectors (comme U+FE0F)
+        String normalized = emoji.replaceAll("\\p{M}|\\uFE0F", "");
+
+        if (emojiShortNames.containsKey(normalized)) {
+            return emojiShortNames.get(normalized);
+        }
+        return "emoji_" + Math.abs(emoji.hashCode());
+    }
+
+
+
 }

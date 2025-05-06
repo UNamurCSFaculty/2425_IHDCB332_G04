@@ -36,6 +36,9 @@ public class Main {
     private static final String INPUT = "i";
     private static final String OUTPUT = "o";
 
+    private EMJParser.RootContext rootTree;
+
+
     /**
      * Main method launched when starting compiler jar file.
      *
@@ -160,85 +163,59 @@ public class Main {
      * Compiler methods, this is where the magic happens
      */
     private void compile() throws IOException, EMJErrorException {
-        try {
-            // Get abstract syntax tree
-            LOG.debug("Parsing input");
-
-            // Create ANTLR lexer and parser, based on .g4 grammar
-            EMJLexer lexer = new EMJLexer(CharStreams.fromPath(inputFile.getAbsoluteFile().toPath()));
-            EMJParser.RootContext tree;
-
-            try {
-                EMJParser parser = new EMJParser(new CommonTokenStream(lexer));
-                // Set error listener to implementation
-                parser.removeErrorListeners();
-                MyConsoleErrorListener errorListener = new MyConsoleErrorListener();
-                parser.addErrorListener(errorListener);
-
-                try {
-                    tree = parser.root();
-                }
-
-                catch (RecognitionException e) {
-                    throw new IllegalArgumentException("Error while retrieving parsing tree!", e);
-                }
-
-                if (errorListener.errorHasBeenReported()) {
-                    throw new IllegalArgumentException("Error while parsing input!");
-                }
-            }
-
-            catch(Exception e) {
-                LOG.error("error while parsing");
-                throw new IllegalArgumentException("Error while parsing", e);
-            }
-
-            LOG.debug("Parsing input: done");
-            LOG.debug("AST is {}", tree.toStringTree(parser));
-
-            // LEAVE FOLLOWING LINE COMMENTED UNTIL VISITOR IS IMPLEMENTED
-            this.visitTree(tree);
-        }
-
-        catch(Exception e) {
-            throw e;
-        }
+        this.parseInput();           //Appelle unique au parser ici
+        this.visitTree(rootTree);   //Utilise le root déjà parsé
     }
 
-    private void generateMicroPython(CommandLine line) throws IOException {
 
-        LOG.info("GENERATE MICRO PYTHON CODE:");
-
-       //Analyse syntaxique
-        EMJParser.RootContext pythonTree;
+    //Pour ne pas Parser 2x (une fois dans compile et une fois dans generateMicroPython
+    private void parseInput() throws IOException {
+        LOG.debug("Parsing input");
         try {
-            EMJLexer lexer   = new EMJLexer(CharStreams.fromPath(inputFile.toPath()));
+            EMJLexer lexer = new EMJLexer(CharStreams.fromPath(inputFile.toPath()));
             EMJParser parser = new EMJParser(new CommonTokenStream(lexer));
 
             parser.removeErrorListeners();
             MyConsoleErrorListener errListener = new MyConsoleErrorListener();
             parser.addErrorListener(errListener);
 
-            pythonTree = parser.root();                      // on parse
+            rootTree = parser.root();
 
             if (errListener.errorHasBeenReported()) {
                 throw new IllegalArgumentException("Error while parsing input!");
             }
+
+            LOG.debug("Parsing input: done");
+            LOG.debug("AST is {}", rootTree.toStringTree(parser));
         } catch (Exception e) {
             LOG.error("Error while parsing", e);
             throw new IOException("Parsing failed", e);
         }
+    }
 
+    private void generateMicroPython(CommandLine line) throws IOException {
+        LOG.info("GENERATE MICRO PYTHON CODE:");
 
-        EMJCodeGenVisitorImpl codeGenvisitor = new EMJCodeGenVisitorImpl();
-        codeGenvisitor.loadTemplates("micropython.stg");
-        ContextResult programResult = (ContextResult) codeGenvisitor.visit(pythonTree);
-        String generatedCode = codeGenvisitor.generateCode(programResult);
+        //Utilise rootTree déjà généré
+        EMJCodeGenVisitorImpl codeGenVisitor = new EMJCodeGenVisitorImpl();
+        codeGenVisitor.loadTemplates("micropython.stg");
+
+        ContextResult programResult;
+        if (rootTree.programFile() != null) {
+            programResult = (ContextResult) codeGenVisitor.visit(rootTree.programFile());
+        } else if (rootTree.mapFile() != null) {
+            programResult = (ContextResult) codeGenVisitor.visit(rootTree.mapFile());
+        } else {
+            throw new IllegalStateException("Root does not contain a valid programFile or mapFile.");
+        }
+
+        String generatedCode = codeGenVisitor.generateCode(programResult);
 
         try (PrintWriter out = new PrintWriter(outputFile)) {
             out.println(generatedCode);
         }
-        System.out.printf("Code généré : \n```%s```%n", generatedCode);
+
+        System.out.printf("Code généré :\n```python\n%s\n```%n", generatedCode);
     }
 
 

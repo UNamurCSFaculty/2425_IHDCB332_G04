@@ -4,8 +4,10 @@
  * à partir de l'AST EMJ
  */
 
+
 // Template pour le programme complet
-program(declarations, mainFunction) ::= <<
+
+program(mainFunction, functions = []) ::= <<
 # Code généré à partir d'un programme EMJ
 from microbit import *
 import cutebot
@@ -14,13 +16,19 @@ import cutebot
 <functions; separator="\n\n">
 <endif>
 
-<main>
+<mainFunction>
 
 if __name__ == "__main__":
     main()
 >>
 
-// Templates pour les types
+// Template pour la fonction principale
+mainFunction(body) ::= <<
+def main():
+<body; separator="\n">
+>>
+
+// Templates pour les types de données
 mapType ::= [
   "INT":"int",
   "BOOL":"bool",
@@ -31,5 +39,5 @@ mapType ::= [
   default:"None"
 ]
 
-// Templates pour les déclarations
+// Templates pour les déclarations de variables
 var_decl(name, type, value, indent) ::= "<indent><name> = <value>"
