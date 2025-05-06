@@ -61,11 +61,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
         // Génère les instructions principales (ex-main)
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        ST mainTemplate = templates.getInstanceOf(mainResult.getTemplateName());
-        for (Map.Entry<String, Object> entry : mainResult.getAttributes().entrySet()) {
-            mainTemplate.add(entry.getKey(), entry.getValue());
-        }
-        attributes.put("body", mainTemplate); // note : body est une List<String>
+        attributes.put("body", mainResult.getAttributes().get("body")); // note : body est une List<String>
 
         // Génère les fonctions utilisateur
         List<String> renderedFunctions = new ArrayList<>();
@@ -125,7 +121,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         Map<String, Object> attributes = new HashMap<>();
         List<String> bodyLines = new ArrayList<>();
 
-        incrIndent();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
             ContextResult result = (ContextResult) visit(stmtCtx);
             if (result.isValid()) {
@@ -136,7 +131,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 bodyLines.add(subTemplate.render());
             }
         }
-        decrIndent();
 
         attributes.put("body", bodyLines);
         return ContextResult.valid(attributes, "mainFunction");

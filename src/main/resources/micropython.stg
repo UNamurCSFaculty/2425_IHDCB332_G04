@@ -51,14 +51,8 @@ orientation = "<orientation>"
 # Carte (chaîne de caractères ligne par ligne)
 map_data = [
     <map; separator=",\n">
-
 ]
 >>
-
-
-
-
-
 
     // ... autres méthodes ...
 
