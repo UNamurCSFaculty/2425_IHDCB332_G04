@@ -14,14 +14,9 @@ public enum EMJVarType {
     }
 
     public String pyLabel() {
-        switch (this) {
-            case CHAR:
-                return "str";
-            case UNKNOWN:
-            case VOID:
-                return "None";
-            default:
-                return label;
+        if (this == EMJVarType.CHAR) {
+            return "str";
         }
+        return label;
     }
 }

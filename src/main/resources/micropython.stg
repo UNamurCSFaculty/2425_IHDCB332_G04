@@ -10,6 +10,7 @@
 program(functions, body) ::= <<
 # Code généré à partir d'un programme EMJ
 from microbit import *
+
 <if(functions)>
 # Fonctions utilisateur
 <functions; separator="\n\n">
@@ -24,6 +25,20 @@ def main():
 <body; separator="\n">
 >>
 
+// Template pour la déclaration de fonctions
+functionDecl(name, parameters, body, return) ::=<<
+def <name>(<parameters; separator=", ">):
+<body; separator="\n">
+<if(return)>
+    return <return>
+<else>
+    ; # No return
+<endif>
+>>
+
+// Template pour les paramètres de fonction
+parameter(name)::= "<name>"
+
 // Templates pour les types de données
 mapType ::= [
   "INT":"int",
@@ -36,9 +51,26 @@ mapType ::= [
 ]
 
 // Templates pour les déclarations de variables
-var_decl(name, type, value, indent) ::= "<indent><name> = <value>"
+varDecl(name, type, value, indent) ::= "<indent><name> = <value>"
 
+// Templates pour l'assignation de variable
+varAssignment(name, value, indent) ::= "<indent><name> = <value>"
 
+// EXPRESSIONS
+
+// Template pour additiveExpression
+additiveExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
+
+// Template pour additiveExpression
+multiplicativeExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
+
+// Template pour unaryExpression
+unaryExpression(minus, code)::=<<<if(minus)>-<endif><primaryExpression(code)> >>
+
+// Template pour primaryExpression
+primaryExpression(code)::= "<code>"
+
+// CARTE
 // Template principal pour un fichier de carte
 map_program(width, height, orientation, map) ::= <<
 # Carte générée à partir d'un fichier EMJ (.map)

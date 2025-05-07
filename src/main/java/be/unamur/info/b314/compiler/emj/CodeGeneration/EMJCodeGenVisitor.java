@@ -11,6 +11,7 @@ public interface EMJCodeGenVisitor {
 
     // Declarations
     ContextResult visitFunctionDecl(EMJParser.FunctionDeclContext ctx);
+    ContextResult visitParam(EMJParser.ParamContext ctx);
     ContextResult visitVarDecl(EMJParser.VarDeclContext ctx);
 
     // Statements
