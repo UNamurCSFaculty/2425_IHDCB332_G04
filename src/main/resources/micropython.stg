@@ -54,7 +54,7 @@ mapType ::= [
 varDecl(name, type, value, indent) ::= "<indent><name> = <value>"
 
 // Templates pour l'assignation de variable
-varAssignment(name, value, indent) ::= "<indent><name> = <value>"
+assignment(left, right, indent) ::= "<indent><left> = <right>"
 
 // EXPRESSIONS
 
@@ -85,6 +85,7 @@ map_data = [
     <map; separator=",\n">
 ]
 >>
-
+// Return statement
+return(value) ::= "return <value>"
     // ... autres méthodes ...
 

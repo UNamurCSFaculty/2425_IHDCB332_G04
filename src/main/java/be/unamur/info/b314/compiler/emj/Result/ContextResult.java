@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Result class for code generation with StringTemplate
@@ -35,14 +36,16 @@ public class ContextResult extends Result {
         return new ContextResult(new HashMap<>(), "", false);
     }
 
-    // Helper method for combining results (e.g., statements in a block)
-    public static ContextResult combine(String templateName, List<ContextResult> results, String collectionName) {
+    public static ContextResult combineRendered(String templateName,
+                                                List<ContextResult> results,
+                                                String collectionName,
+                                                Function<ContextResult, String> renderer) {
         Map<String, Object> combined = new HashMap<>();
-        List<Object> collection = new ArrayList<>();
+        List<String> collection = new ArrayList<>();
 
         for (ContextResult result : results) {
             if (result.isValid()) {
-                collection.add(result.getAttributes());
+                collection.add(renderer.apply(result));
             }
         }
 

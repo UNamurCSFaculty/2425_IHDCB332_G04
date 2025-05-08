@@ -119,21 +119,38 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
-        List<String> bodyLines = new ArrayList<>();
 
+        // Visit all statements and render them
+        List<String> renderedStatements = new ArrayList<>();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
-            ContextResult result = (ContextResult) visit(stmtCtx);
-            if (result.isValid()) {
-                ST subTemplate = templates.getInstanceOf(result.getTemplateName());
-                for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
-                    subTemplate.add(entry.getKey(), entry.getValue());
-                }
-                bodyLines.add(subTemplate.render());
-            }
+            ContextResult stmtResult = (ContextResult) visit(stmtCtx);
+
+            //System.out.println("Statement type: " + stmtResult.getTemplateName());
+            //System.out.println("Attributes: " + stmtResult.getAttributes().keySet());
+
+            renderedStatements.add(renderResult(stmtResult));
         }
 
-        attributes.put("body", bodyLines);
-        return ContextResult.valid(attributes, "mainFunction");
+        attributes.put("body", renderedStatements);
+        return ContextResult.valid(attributes, "main_function");
+
+    }
+
+    private String renderResult(ContextResult result) {
+        if (!result.isValid()) {
+            return "";
+        }
+
+        ST template = templates.getInstanceOf(result.getTemplateName());
+        if (template == null) {
+            return "# Template not found: " + result.getTemplateName();
+        }
+
+        for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
+            template.add(entry.getKey(), entry.getValue());
+        }
+
+        return template.render();
     }
 
     @Override
@@ -194,18 +211,26 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         }
         attributes.put("body", bodyLines);
 
-        String returnType = getTypeFromContext(ctx.returnType().type());
-        if (returnType != null && !returnType.equals(EMJVarType.UNKNOWN.label()) && !returnType.equals(EMJVarType.VOID.label())) {
-            ContextResult result = (ContextResult) visit(ctx.returnStatement());
-            if (result.isValid()) {
-                ST subTemplate = templates.getInstanceOf(result.getTemplateName());
-                for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
-                    subTemplate.add(entry.getKey(), entry.getValue());
-                }
-                attributes.put("return", subTemplate.render());
-            }
-        }
+        ContextResult returnStmtResult = (ContextResult) visit(ctx.returnStatement());
+        attributes.put("return", returnStmtResult.getAttributes().values());
+
         return ContextResult.valid(attributes, "functionDecl");
+    }
+
+    @Override
+    public ContextResult visitReturnStatement(EMJParser.ReturnStatementContext ctx) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        // Check if it's a void return
+        if (ctx.VOID_TYPE() != null || ctx.RETURN_VOID() != null || ctx.expression() == null) {
+            attributes.put("value", "None");
+        } else {
+            // Visit the expression
+            ContextResult exprResult = (ContextResult) visit(ctx.expression());
+            attributes.put("value", exprResult.getAttributes().get("code"));
+        }
+
+        return ContextResult.valid(attributes, "return");
     }
 
     @Override
@@ -231,11 +256,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         // Gérer la valeur initiale
         if (ctx.expression() != null) {
             ContextResult exprResult = (ContextResult) visit(ctx.expression());
-            ST subTemplate = templates.getInstanceOf(exprResult.getTemplateName());
-            for (Map.Entry<String, Object> entry : exprResult.getAttributes().entrySet()) {
-                subTemplate.add(entry.getKey(), entry.getValue());
-            }
-            attributes.put("value", subTemplate.render());
+            attributes.put("value", exprResult.getAttributes().get("code"));
         } else {
             // Valeur par défaut selon le type
             switch (typeResult) {
@@ -292,21 +313,39 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     }
 
     @Override
+    public ContextResult visitLeftExpression(EMJParser.LeftExpressionContext ctx) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        // Get variable name
+        String varName = sanitizeEmoji(ctx.EMOJI_ID().getText());
+
+        // Check if it's a tuple access
+        if (ctx.TUPLE_FIRST() != null) {
+            attributes.put("code", varName + "[0]");
+        } else if (ctx.TUPLE_SECOND() != null) {
+            attributes.put("code", varName + "[1]");
+        } else {
+            attributes.put("code", varName);
+        }
+
+        return ContextResult.valid(attributes, "left_expression");
+    }
+
+
+    @Override
     public ContextResult visitAssignment(EMJParser.AssignmentContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
-        String varName = sanitizeEmoji(ctx.leftExpression().EMOJI_ID().getText());
-        attributes.put("name", varName);
+        // Left expression
+        ContextResult leftResult = (ContextResult) visit(ctx.leftExpression());
+        attributes.put("left", leftResult.getAttributes().get("code"));
 
-        // Gérer la valeur initiale
-        ContextResult exprResult = (ContextResult) visit(ctx.expression());
-        ST subTemplate = templates.getInstanceOf(exprResult.getTemplateName());
-        for (Map.Entry<String, Object> entry : exprResult.getAttributes().entrySet()) {
-            subTemplate.add(entry.getKey(), entry.getValue());
-        }
-        attributes.put("value", subTemplate.render());
+        // Right expression
+        ContextResult rightResult = (ContextResult) visit(ctx.expression());
+        attributes.put("right", rightResult.getAttributes().get("code"));
+
         attributes.put("indent", getIndent());
-        return ContextResult.valid(attributes,"varAssignment");
+        return ContextResult.valid(attributes,"assignment");
     }
 
     @Override
@@ -363,26 +402,21 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public ContextResult visitAdditiveExpression(EMJParser.AdditiveExpressionContext ctx) {
         if (!ctx.PLUS().isEmpty() || !ctx.MINUS().isEmpty()) {
             Map<String, Object> attributes = new HashMap<>();
-            ContextResult leftExprResult = (ContextResult) visit(ctx.multiplicativeExpression(0));
-            ST subTemplateForLeft = templates.getInstanceOf(leftExprResult.getTemplateName());
-            for (Map.Entry<String, Object> entry : leftExprResult.getAttributes().entrySet()) {
-                subTemplateForLeft.add(entry.getKey(), entry.getValue());
-            }
-            attributes.put("left", subTemplateForLeft.render());
+            StringBuilder code = new StringBuilder();
 
-            if (ctx.multiplicativeExpression().size() > 1) {
-                List<String> rights = new ArrayList<>();
-                for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
-                    ContextResult result = (ContextResult) visit(ctx.multiplicativeExpression(i));
-                    ST subTemplateForRight = templates.getInstanceOf(result.getTemplateName());
-                    String op = ctx.getChild(2 * i - 1).getText();
-                    for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
-                        subTemplateForRight.add(entry.getKey(), entry.getValue());
+            for (int i = 0; i < ctx.multiplicativeExpression().size(); i++) {
+                ContextResult exprResult = (ContextResult) visit(ctx.multiplicativeExpression(i));
+                code.append(exprResult.getAttributes().get("code"));
+
+                if (i < ctx.multiplicativeExpression().size() - 1) {
+                    if (ctx.PLUS(i) != null) {
+                        code.append(" + ");
+                    } else {
+                        code.append(" - ");
                     }
-                    rights.add(op + " " + subTemplateForRight.render());
                 }
-                attributes.put("rights", rights);
             }
+            attributes.put("code", code.toString());
             return ContextResult.valid(attributes, "additiveExpression");
         } else if (!ctx.multiplicativeExpression().isEmpty()) {
             return (ContextResult) visit(ctx.multiplicativeExpression(0));
@@ -395,24 +429,22 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         if (!ctx.MULTIPLY().isEmpty() || !ctx.DIVIDE().isEmpty()) {
             Map<String, Object> attributes = new HashMap<>();
             ContextResult leftExprResult = (ContextResult) visit(ctx.unaryExpression(0));
-            ST subTemplateForLeft = templates.getInstanceOf(leftExprResult.getTemplateName());
-            for (Map.Entry<String, Object> entry : leftExprResult.getAttributes().entrySet()) {
-                subTemplateForLeft.add(entry.getKey(), entry.getValue());
-            }
-            attributes.put("left", subTemplateForLeft.render());
-            if (ctx.unaryExpression().size() > 1) {
-                List<String> rights = new ArrayList<>();
-                for (int i = 1; i < ctx.unaryExpression().size(); i++) {
-                    ContextResult result = (ContextResult) visit(ctx.unaryExpression(i));
-                    ST subTemplate = templates.getInstanceOf(result.getTemplateName());
-                    String op = ctx.getChild(2 * i - 1).getText();
-                    for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
-                        subTemplate.add(entry.getKey(), entry.getValue());
+            StringBuilder code = new StringBuilder();
+
+            for (int i = 0; i < ctx.unaryExpression().size(); i++) {
+                ContextResult exprResult = (ContextResult) visit(ctx.unaryExpression(i));
+                code.append(exprResult.getAttributes().get("code"));
+
+                if (i < ctx.unaryExpression().size() - 1) {
+                    if (ctx.MULTIPLY(i) != null) {
+                        code.append(" * ");
+                    } else {
+                        code.append(" / ");
                     }
-                    rights.add(op + " " + subTemplate.render());
                 }
-                attributes.put("rights", rights);
             }
+
+            attributes.put("code", "(" + code.toString() + ")");
             return ContextResult.valid(attributes, "multiplicativeExpression");
         } else if (ctx.unaryExpression().size() == 1) {
             return (ContextResult) visit(ctx.unaryExpression(0));
