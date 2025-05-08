@@ -1106,31 +1106,47 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
         return VoidResult.valid();
     }
 
-    @Override
-    public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
-        symbolTable.enterScope("if");
-
-        if (ctx.expression() != null) {
-            String condType = getExpressionType(ctx.expression());
-            if (!condType.equals(EMJVarType.BOOL.label())) {
-                errorLogger.addError(new EMJError(
-                        "invalidIfCondition",
-                        String.format("Condition of if statement must be of type BOOL, found: %s", condType),
-                        ctx.start.getLine()
-                ));
-            }
-        } else {
-            errorLogger.addError(new EMJError(
-                    "missingIfCondition",
-                    "If statement requires a condition expression.",
-                    ctx.start.getLine()
-            ));
-        }
-
-        visitChildren(ctx);
-        symbolTable.exitScope();
-        return VoidResult.valid();
+   /**
+ * Visite une instruction conditionnelle
+ * 
+ * @param ctx Contexte de l'instruction conditionnelle
+ * @requires ctx != null && ctx.expression() != null
+ * @modifies symbolTable, errorLogger
+ * @effects entre dans une nouvelle portée "if"
+ *          vérifie que la condition est de type BOOL
+ *          visite les blocs then et else
+ *          ajoute une erreur au errorLogger si la condition n'est pas de type BOOL
+ * @return le résultat de la visite des enfants du nœud
+ */
+@Override
+public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
+    // Vérifier que la condition est de type booléen
+    TypeResult conditionType = visitExpression(ctx.expression());
+    if (!conditionType.getTypeId().equals("BOOL")) {
+        errorLogger.addError(new EMJError(
+                "conditionTypeMismatch",
+                String.format("If condition must be of type BOOL, but got %s", conditionType.getTypeId()),
+                ctx.getStart().getLine()
+        ));
     }
+    
+    // Visiter le bloc 'then'
+    symbolTable.enterScope("if");
+    visit(ctx.block(0));
+    symbolTable.exitScope();
+    
+    // Visiter le bloc 'else' s'il existe
+    if (ctx.block().size() > 1) {
+        symbolTable.enterScope("else");
+        visit(ctx.block(1));
+        symbolTable.exitScope();
+    } else if (ctx.ELSE() != null) {
+        // Cas spécial: else { SKIPPING; }
+        // Ne nécessite pas de traitement sémantique particulier
+    }
+    
+    return VoidResult.valid();
+}
 
     /**
      * Visite un bloc de code
