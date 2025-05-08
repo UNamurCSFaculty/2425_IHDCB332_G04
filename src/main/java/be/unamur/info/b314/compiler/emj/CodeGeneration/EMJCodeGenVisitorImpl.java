@@ -391,7 +391,31 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         if (ctx.DOUBLE_EQUAL() != null || ctx.NOTEQUAL() != null ||
                 ctx.LESS() != null || ctx.LEQ() != null ||
                 ctx.GREATER() != null || ctx.GEQ() != null) {
-            return null;
+            Map<String, Object> attributes = new HashMap<>();
+            StringBuilder code = new StringBuilder();
+
+            // Left operand
+            ContextResult leftResult = (ContextResult) visit(ctx.additiveExpression(0));
+            code.append(leftResult.getAttributes().get("code"));
+
+            // Operator
+            String op;
+            if (ctx.DOUBLE_EQUAL() != null) op = " == ";
+            else if (ctx.NOTEQUAL() != null) op = " != ";
+            else if (ctx.LESS() != null) op = " < ";
+            else if (ctx.LEQ() != null) op = " <= ";
+            else if (ctx.GREATER() != null) op = " > ";
+            else if (ctx.GEQ() != null) op = " >= ";
+            else op = " ? "; // Should never happen
+
+            code.append(op);
+
+            // Right operand
+            ContextResult rightResult = (ContextResult) visit(ctx.additiveExpression(1));
+            code.append(rightResult.getAttributes().get("code"));
+
+            attributes.put("code", code.toString());
+            return ContextResult.valid(attributes, "primaryExpression");
         } else if (!ctx.additiveExpression().isEmpty()) {
             return (ContextResult) visit(ctx.additiveExpression(0));
         }
