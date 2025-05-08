@@ -444,7 +444,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 }
             }
 
-            attributes.put("code", "(" + code.toString() + ")");
+            attributes.put("code", code.toString());
             return ContextResult.valid(attributes, "multiplicativeExpression");
         } else if (ctx.unaryExpression().size() == 1) {
             return (ContextResult) visit(ctx.unaryExpression(0));
@@ -456,15 +456,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public ContextResult visitUnaryExpression(EMJParser.UnaryExpressionContext ctx) {
         if (ctx.MINUS() != null) {
             Map<String, Object> attributes = new HashMap<>();
-            attributes.put("minus", ctx.MINUS().getText());
             ContextResult exprResult = (ContextResult) visit(ctx.primaryExpression());
-            if (exprResult.isValid()) {
-                ST subTemplate = templates.getInstanceOf(exprResult.getTemplateName());
-                for (Map.Entry<String, Object> entry : exprResult.getAttributes().entrySet()) {
-                    subTemplate.add(entry.getKey(), entry.getValue());
-                }
-                attributes.put("code", subTemplate.render());
-            }
+            attributes.put("code", "-" + exprResult.getAttributes().get("code"));
             return ContextResult.valid(attributes, "unaryExpression");
         } else {
             return (ContextResult) visit(ctx.primaryExpression());
