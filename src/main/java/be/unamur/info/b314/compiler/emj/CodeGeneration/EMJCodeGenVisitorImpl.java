@@ -356,7 +356,20 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitOrExpression(EMJParser.OrExpressionContext ctx) {
         if (!ctx.OR().isEmpty()) {
-            return null;
+            Map<String, Object> attributes = new HashMap<>();
+            StringBuilder code = new StringBuilder();
+
+            for (int i = 0; i < ctx.andExpression().size(); i++) {
+                ContextResult exprResult = (ContextResult) visit(ctx.andExpression(i));
+                code.append(exprResult.getAttributes().get("code"));
+
+                if (i < ctx.andExpression().size() - 1) {
+                    code.append(" or ");
+                }
+            }
+
+            attributes.put("code", code.toString());
+            return ContextResult.valid(attributes, "primary_expression");
         } else if (!ctx.andExpression().isEmpty()) {
             return (ContextResult) visit(ctx.andExpression(0));
         }
@@ -367,7 +380,20 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitAndExpression(EMJParser.AndExpressionContext ctx) {
         if (!ctx.AND().isEmpty()) {
-            return null;
+            Map<String, Object> attributes = new HashMap<>();
+            StringBuilder code = new StringBuilder();
+
+            for (int i = 0; i < ctx.notExpression().size(); i++) {
+                ContextResult exprResult = (ContextResult) visit(ctx.notExpression(i));
+                code.append(exprResult.getAttributes().get("code"));
+
+                if (i < ctx.notExpression().size() - 1) {
+                    code.append(" and ");
+                }
+            }
+
+            attributes.put("code", code.toString());
+            return ContextResult.valid(attributes, "primary_expression");
         } else if (!ctx.notExpression().isEmpty()) {
             return (ContextResult) visit(ctx.notExpression(0));
         }
@@ -378,7 +404,11 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitNotExpression(EMJParser.NotExpressionContext ctx) {
         if (ctx.NOT() != null) {
-            return null;
+            Map<String, Object> attributes = new HashMap<>();
+            ContextResult exprResult = (ContextResult) visit(ctx.comparisonExpression());
+            attributes.put("code", "not " + exprResult.getAttributes().get("code"));
+
+            return ContextResult.valid(attributes, "not_expression");
         } else if (!ctx.comparisonExpression().isEmpty()) {
             return (ContextResult) visit(ctx.comparisonExpression());
         }
