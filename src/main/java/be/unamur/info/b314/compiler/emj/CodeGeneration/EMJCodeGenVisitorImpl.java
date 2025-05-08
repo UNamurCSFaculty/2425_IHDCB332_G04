@@ -125,8 +125,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
             ContextResult stmtResult = (ContextResult) visit(stmtCtx);
 
-            //System.out.println("Statement type: " + stmtResult.getTemplateName());
-            //System.out.println("Attributes: " + stmtResult.getAttributes().keySet());
+            System.out.println("Statement type: " + stmtResult.getTemplateName());
+            System.out.println("Attributes: " + stmtResult.getAttributes().keySet());
 
             renderedStatements.add(renderResult(stmtResult));
         }
@@ -554,18 +554,26 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
     @Override
     public ContextResult visitFunctionCall(EMJParser.FunctionCallContext ctx) {
-//        ST functionCallTemplate = templateGroup.getInstanceOf("loopStatement");
-//        functionCallTemplate.add("functionId", visit(ctx.EMOJI_ID()).render());
-//        if (ctx.argumentList() != null && !ctx.argumentList().isEmpty()) {
-//            StringBuilder argSb = new StringBuilder();
-//            for (EMJParser.ExpressionContext arg : ctx.argumentList().expression()) {
-//                ST argCode = visit(arg);
-//                argSb.append(argCode.render()).append(COMMA);
-//            }
-//            functionCallTemplate.add("argumentList", argSb.toString());
-//        }
-//        return functionCallTemplate;
-        return null;
+        Map<String, Object> attributes = new HashMap<>();
+
+        // Function name
+        String funcName = sanitizeEmoji(ctx.EMOJI_ID().getText());
+
+        // Arguments
+        StringBuilder args = new StringBuilder();
+        if (ctx.argumentList() != null) {
+            List<EMJParser.ExpressionContext> argCtxs = ctx.argumentList().expression();
+            for (int i = 0; i < argCtxs.size(); i++) {
+                ContextResult argResult = (ContextResult) visit(argCtxs.get(i));
+                args.append(argResult.getAttributes().get("code"));
+                if (i < argCtxs.size() - 1) {
+                    args.append(", ");
+                }
+            }
+        }
+
+        attributes.put("code", funcName + "(" + args + ")");
+        return ContextResult.valid(attributes, "primaryExpression");
     }
 
     @Override
