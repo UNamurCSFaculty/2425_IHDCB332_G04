@@ -124,10 +124,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         List<String> renderedStatements = new ArrayList<>();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
             ContextResult stmtResult = (ContextResult) visit(stmtCtx);
-
-            System.out.println("Statement type: " + stmtResult.getTemplateName());
-            System.out.println("Attributes: " + stmtResult.getAttributes().keySet());
-
             renderedStatements.add(renderResult(stmtResult));
         }
 
@@ -240,6 +236,21 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         String varName = sanitizeEmoji(ctx.EMOJI_ID().getText());
         attributes.put("name", varName);
         return ContextResult.valid(attributes, "parameter");
+    }
+
+    @Override
+    public ContextResult visitTupleValue(EMJParser.TupleValueContext ctx) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        // First value
+        ContextResult val1Result = (ContextResult) visit(ctx.expression(0));
+        // Second value
+        ContextResult val2Result = (ContextResult) visit(ctx.expression(1));
+
+        attributes.put("code", "(" + val1Result.getAttributes().get("code") + ", " +
+                val2Result.getAttributes().get("code") + ")");
+
+        return ContextResult.valid(attributes, "primaryExpression");
     }
 
     @Override
