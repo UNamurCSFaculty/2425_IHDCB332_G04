@@ -220,9 +220,15 @@ public class Main {
 
 
     private void visitTree(EMJParser.RootContext tree) throws EMJErrorException {
-        // Visit tree
-        EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
-        EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
+    // Visit tree
+    EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
+    
+    // Passer le chemin du fichier source au visiteur pour la résolution des chemins relatifs
+    if (inputFile != null) {
+        visitor.setSourceFilePath(inputFile.getAbsolutePath());
+    }
+    
+    EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
         LOG.debug("Visiting");
         adapter.visit(tree);
         LOG.debug("Visiting: done");
