@@ -296,22 +296,59 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
     @Override
     public ContextResult visitBlock(EMJParser.BlockContext ctx) {
-//        ContextResult blockSttTemplate = templateGroup.getInstanceOf("block");
-//        blockSttTemplate.add("body", getStatementsAsStr(ctx.statement()));
-//        return blockSttTemplate;
-        return null;
+        Map<String, Object> attributes = new HashMap<>();
+
+        // Increment indent level for statements inside the block
+        indentLevel++;
+
+        // Visit all statements and render them
+        List<String> renderedStatements = new ArrayList<>();
+        for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
+            ContextResult stmtResult = (ContextResult) visit(stmtCtx);
+
+            // Debug: Print what result we got
+            System.out.println("Block Statement type: " + stmtResult.getTemplateName());
+            System.out.println("Block Attributes: " + stmtResult.getAttributes().keySet());
+
+            renderedStatements.add(renderResult(stmtResult));
+        }
+
+        // Decrement indent level
+        indentLevel--;
+
+        // Put the rendered statements in attributes
+        attributes.put("statements", renderedStatements);
+
+        return ContextResult.valid(attributes, "block");
     }
 
     @Override
     public ContextResult visitIfStatement(EMJParser.IfStatementContext ctx) {
-//        ST ifSttTemplate = templateGroup.getInstanceOf("ifStatement");
-//        ifSttTemplate.add("condition", visit(ctx.expression()).render());
-//        ifSttTemplate.add("thenBlock", visit(ctx.block(0)).render());
-//        if (ctx.block().size() == 2) {
-//            ifSttTemplate.add("elseBlock", visit(ctx.block(1)).render());
-//        }
-//        return ifSttTemplate;
-        return null;
+        Map<String, Object> attributes = new HashMap<>();
+
+        // Condition
+        ContextResult condResult = (ContextResult) visit(ctx.expression());
+        attributes.put("condition", condResult.getAttributes().get("code"));
+
+        // If block
+        ContextResult ifBlockResult = (ContextResult) visit(ctx.block(0));
+        attributes.put("ifBlock", ifBlockResult.getAttributes().get("statements"));
+
+        // Else block if present
+        if (ctx.block().size() > 1) {
+            ContextResult elseBlockResult = (ContextResult) visit(ctx.block(1));
+            attributes.put("hasElse", true);
+            attributes.put("elseBlock", elseBlockResult.getAttributes().get("statements"));
+        } else if (ctx.SKIPPING() != null) {
+            // Skip branch (empty else)
+            attributes.put("hasElse", true);
+            attributes.put("elseBlock", new ArrayList<>());
+        } else {
+            attributes.put("hasElse", false);
+        }
+
+        attributes.put("indent", getIndent());
+        return ContextResult.valid(attributes, "if_statement");
     }
 
     @Override
