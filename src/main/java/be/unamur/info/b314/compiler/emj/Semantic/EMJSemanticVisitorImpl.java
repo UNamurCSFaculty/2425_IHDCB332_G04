@@ -1146,7 +1146,7 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
 public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
     // Vérifier que la condition est de type booléen
     TypeResult conditionType = visitExpression(ctx.expression());
-    if (!conditionType.getTypeId().equals("BOOL")) {
+    if (!conditionType.getTypeId().equals("bool")) {
         errorLogger.addError(new EMJError(
                 "conditionTypeMismatch",
                 String.format("If condition must be of type BOOL, but got %s", conditionType.getTypeId()),
@@ -1262,21 +1262,21 @@ public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
         if (mapPath.startsWith("\"") && mapPath.endsWith("\"")) {
             mapPath = mapPath.substring(1, mapPath.length() - 1);
         }
-        
-        // Résoudre le chemin complet du fichier carte
-        File mapFile = resolveMapPath(mapPath);
-        
-        // Vérifier si le fichier existe
-        if (!mapFile.exists()) {
-            errorLogger.addError(new EMJError(
-                "mapFileNotFound",
-                String.format("Map file '%s' not found", mapPath),
-                ctx.start.getLine()
-            ));
-        }
-        
+//
+//        // Résoudre le chemin complet du fichier carte
+//        File mapFile = resolveMapPath(mapPath);
+//
+//        // Vérifier si le fichier existe
+//        if (!mapFile.exists()) {
+//            errorLogger.addError(new EMJError(
+//                "mapFileNotFound",
+//                String.format("Map file '%s' not found", mapPath),
+//                ctx.start.getLine()
+//            ));
+//        }
+//
         // Vérifier si le fichier a l'extension .map
-        if (!mapFile.getName().toLowerCase().endsWith(".map")) {
+        if (!mapPathLiteral.toLowerCase().endsWith(".map")) {
             errorLogger.addError(new EMJError(
                 "invalidMapFileExtension",
                 String.format("Map file '%s' must have .map extension", mapPath),
