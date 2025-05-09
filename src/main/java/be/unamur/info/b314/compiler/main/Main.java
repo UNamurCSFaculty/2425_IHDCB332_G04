@@ -200,14 +200,7 @@ public class Main {
         EMJCodeGenVisitorImpl codeGenVisitor = new EMJCodeGenVisitorImpl();
         codeGenVisitor.loadTemplates("micropython.stg");
 
-        ContextResult programResult;
-        if (rootTree.programFile() != null) {
-            programResult = (ContextResult) codeGenVisitor.visit(rootTree.programFile());
-        } else if (rootTree.mapFile() != null) {
-            programResult = (ContextResult) codeGenVisitor.visit(rootTree.mapFile());
-        } else {
-            throw new IllegalStateException("Root does not contain a valid programFile or mapFile.");
-        }
+        ContextResult programResult = (ContextResult) codeGenVisitor.visit(rootTree);
 
         String generatedCode = codeGenVisitor.generateCode(programResult);
 
@@ -224,10 +217,7 @@ public class Main {
     EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
     
     // Passer le chemin du fichier source au visiteur pour la résolution des chemins relatifs
-    if (inputFile != null) {
-        visitor.setSourceFilePath(inputFile.getAbsolutePath());
-    }
-    
+
     EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
         LOG.debug("Visiting");
         adapter.visit(tree);

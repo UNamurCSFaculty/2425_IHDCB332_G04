@@ -88,5 +88,20 @@ map_data = [
 // Return statement
 return(value) ::= "return <value>"
 
+// If Statement
+if_statement(condition, ifBlock, hasElse, elseBlock, indent) ::=
+<<if <condition>:
+<ifBlock:{stmt | <indent>    <stmt>}; separator="\n">
+<if(hasElse)>
+else:
+<if(elseBlock)>
+<indent><elseBlock:{stmt | <indent>    <stmt>}; separator="\n">
+<else>
+<indent>    pass
+<endif>
+<endif>
+>>
+
+block(statements) ::= "<statements; separator=\"\n\">"
     // ... autres méthodes ...
 

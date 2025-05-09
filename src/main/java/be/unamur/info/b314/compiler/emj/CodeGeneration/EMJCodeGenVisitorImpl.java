@@ -56,6 +56,17 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     }
 
     @Override
+    public ContextResult visitRoot(EMJParser.RootContext ctx) {
+        if (ctx.programFile() != null) {
+            return visitProgramFile(ctx.programFile());
+        }
+        else if (ctx.mapFile() != null) {
+            return visitMapFile(ctx.mapFile());
+        }
+        return null;
+    }
+
+    @Override
     public ContextResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
@@ -307,8 +318,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             ContextResult stmtResult = (ContextResult) visit(stmtCtx);
 
             // Debug: Print what result we got
-            System.out.println("Block Statement type: " + stmtResult.getTemplateName());
-            System.out.println("Block Attributes: " + stmtResult.getAttributes().keySet());
+//            System.out.println("Block Statement type: " + stmtResult.getTemplateName());
+//            System.out.println("Block Attributes: " + stmtResult.getAttributes().keySet());
 
             renderedStatements.add(renderResult(stmtResult));
         }

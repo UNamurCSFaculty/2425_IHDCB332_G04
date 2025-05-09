@@ -1276,13 +1276,13 @@ public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
 //        }
 //
         // Vérifier si le fichier a l'extension .map
-        if (!mapPathLiteral.toLowerCase().endsWith(".map")) {
-            errorLogger.addError(new EMJError(
-                "invalidMapFileExtension",
-                String.format("Map file '%s' must have .map extension", mapPath),
-                ctx.start.getLine()
-            ));
-        }
+//        if (!mapPathLiteral.toLowerCase().endsWith(".map")) {
+//            errorLogger.addError(new EMJError(
+//                "invalidMapFileExtension",
+//                String.format("Map file '%s' must have .map extension", mapPath),
+//                ctx.start.getLine()
+//            ));
+//        }
         
         return VoidResult.valid();
     }
