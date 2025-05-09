@@ -328,6 +328,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         indentLevel--;
 
         // Put the rendered statements in attributes
+        attributes.put("body", renderedStatements);
         attributes.put("statements", renderedStatements);
 
         return ContextResult.valid(attributes, "block");
@@ -336,39 +337,95 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitIfStatement(EMJParser.IfStatementContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
+        List<String> body = new ArrayList<>();
 
         // Condition
         ContextResult condResult = (ContextResult) visit(ctx.expression());
-        attributes.put("condition", condResult.getAttributes().get("code"));
+        String condition = condResult.getAttributes().get("code").toString();
 
-        // If block
+        // Ligne if
+        body.add(getIndent() + "if " + condition + ":");
+
+        // Bloc if
+        incrIndent();
         ContextResult ifBlockResult = (ContextResult) visit(ctx.block(0));
-        attributes.put("ifBlock", ifBlockResult.getAttributes().get("statements"));
+        List<String> ifBodyStatements = (List<String>) ifBlockResult.getAttributes().get("body");
+        if (ifBodyStatements != null) {
+            body.addAll(ifBodyStatements);
+        }
+        decrIndent();
 
-        // Else block if present
+        // Bloc else si présent
         if (ctx.block().size() > 1) {
+            body.add(getIndent() + "else:");
+            incrIndent();
             ContextResult elseBlockResult = (ContextResult) visit(ctx.block(1));
-            attributes.put("hasElse", true);
-            attributes.put("elseBlock", elseBlockResult.getAttributes().get("statements"));
+            List<String> elseBodyStatements = (List<String>) elseBlockResult.getAttributes().get("body");
+            if (elseBodyStatements != null) {
+                body.addAll(elseBodyStatements);
+            }
+            decrIndent();
         } else if (ctx.SKIPPING() != null) {
-            // Skip branch (empty else)
-            attributes.put("hasElse", true);
-            attributes.put("elseBlock", new ArrayList<>());
-        } else {
-            attributes.put("hasElse", false);
+            // Skip branch (else vide)
+            body.add(getIndent() + "else:");
+            incrIndent();
+            body.add(getIndent() + "pass  # skip");
+            decrIndent();
         }
 
-        attributes.put("indent", getIndent());
-        return ContextResult.valid(attributes, "if_statement");
+        attributes.put("body", body);
+        return ContextResult.valid(attributes, "ifStatement");
     }
 
     @Override
     public ContextResult visitLoopStatement(EMJParser.LoopStatementContext ctx) {
-//        ST loopSttTemplate = templateGroup.getInstanceOf("loopStatement");
-//        loopSttTemplate.add("condition", visit(ctx.expression()).render());
-//        loopSttTemplate.add("block", visit(ctx.block()).render());
-//        return loopSttTemplate;
-        return null;
+        Map<String, Object> attributes = new HashMap<>();
+        List<String> body = new ArrayList<>();
+
+        // Vérifier si c'est une boucle while (identifiée par l'emoji ♾️)
+        if (ctx.WHILE() != null) {
+            // Condition
+            ContextResult conditionResult = (ContextResult) visit(ctx.expression());
+            String condition = conditionResult.getAttributes().get("code").toString();
+
+            body.add(getIndent() + "while " + condition + ":");
+
+            incrIndent();
+
+            // Corps de la boucle
+            ContextResult blockResult = (ContextResult) visit(ctx.block());
+            List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
+
+            if (blockStatements != null) {
+                body.addAll(blockStatements);
+            }
+
+            decrIndent();
+        }
+        // Cas pour la boucle for (identifiée par l'emoji 🔁)
+        else if (ctx.FOR() != null) {
+            // Nombre d'itérations
+            ContextResult exprResult = (ContextResult) visit(ctx.expression());
+            String expr = exprResult.getAttributes().get("code").toString();
+
+            String counter = "i" + loopCounter++;
+            body.add(getIndent() + "for " + counter + " in range(int(" + expr + ")):");
+
+            incrIndent();
+
+            // Corps de la boucle
+            ContextResult blockResult = (ContextResult) visit(ctx.block());
+            List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
+
+            if (blockStatements != null) {
+                body.addAll(blockStatements);
+            }
+
+            decrIndent();
+        }
+
+        attributes.put("body", body);
+        return ContextResult.valid(attributes, "loopStatement");
     }
 
     @Override

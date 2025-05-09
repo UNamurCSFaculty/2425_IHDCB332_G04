@@ -4,9 +4,7 @@
  * à partir de l'AST EMJ
  */
 
-
 // Template pour le programme complet
-
 program(functions, body) ::= <<
 # Code généré à partir d'un programme EMJ
 from microbit import *
@@ -26,7 +24,7 @@ def main():
 >>
 
 // Template pour la déclaration de fonctions
-functionDecl(name, parameters, body, return) ::=<<
+functionDecl(name, parameters, body, return) ::= <<
 def <name>(<parameters; separator=", ">):
 <body; separator="\n">
 <if(return)>
@@ -57,15 +55,14 @@ varDecl(name, type, value, indent) ::= "<indent><name> = <value>"
 assignment(left, right, indent) ::= "<indent><left> = <right>"
 
 // EXPRESSIONS
-
 // Template pour additiveExpression
 additiveExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
 
-// Template pour additiveExpression
+// Template pour multiplicativeExpression
 multiplicativeExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
 
 // Template pour unaryExpression
-unaryExpression(minus, code)::=<<<if(minus)>-<endif><primaryExpression(code)> >>
+unaryExpression(minus, code)::= <<<if(minus)>-<endif><primaryExpression(code)> >>
 
 // Template pour primaryExpression
 primaryExpression(code)::= "<code>"
@@ -85,23 +82,21 @@ map_data = [
     <map; separator=",\n">
 ]
 >>
+
 // Return statement
 return(value) ::= "return <value>"
 
 // If Statement
-if_statement(condition, ifBlock, hasElse, elseBlock, indent) ::=
-<<if <condition>:
-<ifBlock:{stmt | <indent>    <stmt>}; separator="\n">
-<if(hasElse)>
-else:
-<if(elseBlock)>
-<indent><elseBlock:{stmt | <indent>    <stmt>}; separator="\n">
-<else>
-<indent>    pass
-<endif>
-<endif>
+ifStatement(body) ::= <<
+<body; separator="\n">
 >>
 
-block(statements) ::= "<statements; separator=\"\n\">"
-    // ... autres méthodes ...
+// Template pour les blocs
+block(statements) ::= <<
+<statements; separator="\n">
+>>
 
+// Template pour les boucles (while et for)
+loopStatement(body) ::= <<
+<body; separator="\n">
+>>
