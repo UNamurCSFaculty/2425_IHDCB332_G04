@@ -1,6 +1,7 @@
 package be.unamur.info.b314.compiler.emj.CodeGeneration;
 
 import be.unamur.info.b314.compiler.EMJParser;
+// Utilisons le nom complet de la classe pour éviter les problèmes de résolution
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
 
 public interface EMJCodeGenVisitor {
@@ -19,6 +20,9 @@ public interface EMJCodeGenVisitor {
     ContextResult visitIfStatement(EMJParser.IfStatementContext ctx);
     ContextResult visitLoopStatement(EMJParser.LoopStatementContext ctx);
     ContextResult visitAssignment(EMJParser.AssignmentContext ctx);
+    ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx);
+    ContextResult visitReturnStatement(EMJParser.ReturnStatementContext ctx);
+    ContextResult visitFunctionCallStmt(EMJParser.FunctionCallStmtContext ctx);
 
     // Expressions
     ContextResult visitExpression(EMJParser.ExpressionContext ctx);

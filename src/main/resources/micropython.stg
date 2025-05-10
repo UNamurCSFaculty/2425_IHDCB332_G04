@@ -13,13 +13,11 @@ from microbit import *
 # Fonctions utilisateur
 <functions; separator="\n\n">
 <endif>
-
 <body; separator="\n">
 >>
 
 // Template pour la fonction principale
 mainFunction(body) ::= <<
-def main():
 <body; separator="\n">
 >>
 
@@ -92,11 +90,14 @@ ifStatement(body) ::= <<
 >>
 
 // Template pour les blocs
-block(statements) ::= <<
-<statements; separator="\n">
+block(body) ::= <<
+<body; separator="\n">
 >>
 
 // Template pour les boucles (while et for)
 loopStatement(body) ::= <<
 <body; separator="\n">
 >>
+
+// Template pour les instructions prédéfinies
+predefinedStmt(code) ::= "<code>"

@@ -3,6 +3,7 @@ package be.unamur.info.b314.compiler.emj.CodeGeneration;
 import be.unamur.info.b314.compiler.EMJParser;
 import be.unamur.info.b314.compiler.EMJParserBaseVisitor;
 import be.unamur.info.b314.compiler.emj.EMJVarType;
+// Utilisation du chemin complet pour éviter les problèmes de résolution de package
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
@@ -72,25 +73,83 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
         // Génère les instructions principales (ex-main)
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        attributes.put("body", mainResult.getAttributes().get("body")); // note : body est une List<String>
+        
+        if (mainResult == null) {
+            System.err.println("Erreur: mainResult est null. Impossible de générer le corps du programme.");
+            return ContextResult.invalid();
+        }
+        
+        if (!mainResult.isValid()) {
+            System.err.println("Avertissement: mainResult n'est pas valide.");
+        }
+        
+        // Vérification et ajout de l'attribut 'body'
+        if (mainResult.getAttributes().containsKey("body")) {
+            Object bodyObj = mainResult.getAttributes().get("body");
+            if (bodyObj instanceof List) {
+                List<?> bodyList = (List<?>) bodyObj;
+                System.out.println("Corps du main trouvé avec " + bodyList.size() + " instructions.");
+                attributes.put("body", bodyList);
+            } else {
+                System.err.println("Erreur: l'attribut 'body' n'est pas une liste comme attendu. Type: " + 
+                                 (bodyObj != null ? bodyObj.getClass().getName() : "null"));
+                // Créer une liste vide plutôt que de générer une erreur
+                attributes.put("body", new ArrayList<String>());
+            }
+        } else {
+            System.err.println("Erreur: l'attribut 'body' est manquant dans mainResult.");
+            // Créer une liste vide plutôt que de générer une erreur
+            attributes.put("body", new ArrayList<String>());
+        }
 
         // Génère les fonctions utilisateur
         List<String> renderedFunctions = new ArrayList<>();
-        if (ctx.functionDecl() != null) {
+        if (ctx.functionDecl() != null && !ctx.functionDecl().isEmpty()) {
+            System.out.println("Génération de " + ctx.functionDecl().size() + " fonctions utilisateur.");
+            
             for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
+                try {
+                    incrIndent();
+                    ContextResult funcResult = (ContextResult) visit(funcCtx);
+                    decrIndent();
 
-                incrIndent();
-                ContextResult funcResult = (ContextResult) visit(funcCtx);
-                decrIndent();
+                    if (funcResult == null || !funcResult.isValid()) {
+                        System.err.println("Erreur lors de la génération de la fonction: " + 
+                                         (funcCtx.EMOJI_ID() != null ? funcCtx.EMOJI_ID().getText() : "<sans nom>"));
+                        continue;
+                    }
 
-                ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
-                for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
-                    funcTemplate.add(entry.getKey(), entry.getValue());
+                    ST funcTemplate = templates.getInstanceOf(funcResult.getTemplateName());
+                    if (funcTemplate == null) {
+                        System.err.println("Template de fonction non trouvé: " + funcResult.getTemplateName());
+                        continue;
+                    }
+
+                    for (Map.Entry<String, Object> entry : funcResult.getAttributes().entrySet()) {
+                        try {
+                            funcTemplate.add(entry.getKey(), entry.getValue());
+                        } catch (Exception e) {
+                            System.err.println("Erreur lors de l'ajout de l'attribut '" + 
+                                             entry.getKey() + "' au template de fonction: " + e.getMessage());
+                        }
+                    }
+                    
+                    String renderedFunction = funcTemplate.render();
+                    renderedFunctions.add(renderedFunction);
+                    System.out.println("Fonction rendue avec succès: " + 
+                                     (funcCtx.EMOJI_ID() != null ? funcCtx.EMOJI_ID().getText() : "<sans nom>"));
+                } catch (Exception e) {
+                    System.err.println("Exception lors de la génération d'une fonction: " + e.getMessage());
+                    e.printStackTrace();
                 }
-                renderedFunctions.add(funcTemplate.render());
             }
+        } else {
+            System.out.println("Aucune fonction utilisateur à générer.");
         }
+        
         attributes.put("functions", renderedFunctions);
+        System.out.println("Génération du programme terminée avec " + renderedFunctions.size() + 
+                          " fonctions utilisateur.");
 
         return ContextResult.valid(attributes, "program");
     }
@@ -135,26 +194,79 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         List<String> renderedStatements = new ArrayList<>();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
             ContextResult stmtResult = (ContextResult) visit(stmtCtx);
-            renderedStatements.add(renderResult(stmtResult));
+            if (stmtResult == null) {
+                System.err.println("Erreur: stmtResult est null pour le statement: " + stmtCtx.getText());
+                continue;
+            }
+            
+            if (!stmtResult.isValid()) {
+                System.err.println("Avertissement: stmtResult n'est pas valide pour le statement: " + stmtCtx.getText());
+            }
+            
+            String renderedStatement = renderResult(stmtResult);
+            if (renderedStatement != null && !renderedStatement.isEmpty()) {
+                renderedStatements.add(renderedStatement);
+            }
+        }
+
+        // Vérifier si le template existe réellement et quels sont ses attributs
+        if (templates != null) {
+            ST mainFunctionTemplate = templates.getInstanceOf("mainFunction");
+            if (mainFunctionTemplate != null) {
+                System.out.println("Template mainFunction trouvé!");
+                // Test du template avec l'attribut 'body'
+                ST testTemplate = new ST(mainFunctionTemplate);
+                try {
+                    testTemplate.add("body", renderedStatements);
+                    System.out.println("Rendu test du template mainFunction: \n" + testTemplate.render());
+                } catch (Exception e) {
+                    System.err.println("Erreur lors du test du template mainFunction avec l'attribut 'body': " + e.getMessage());
+                }
+            } else {
+                System.err.println("Template mainFunction non trouvé!");
+            }
+        }
+
+        // Debug: afficher le nombre d'instructions renderisées
+        System.out.println("Nombre d'instructions renderisées pour le main: " + renderedStatements.size());
+        if (!renderedStatements.isEmpty()) {
+            System.out.println("Exemple d'une instruction renderisée: " + renderedStatements.get(0));
         }
 
         attributes.put("body", renderedStatements);
-        return ContextResult.valid(attributes, "main_function");
-
+        return ContextResult.valid(attributes, "mainFunction");
     }
 
     private String renderResult(ContextResult result) {
         if (!result.isValid()) {
             return "";
         }
-
-        ST template = templates.getInstanceOf(result.getTemplateName());
-        if (template == null) {
-            return "# Template not found: " + result.getTemplateName();
+        
+        // Vérifier que les templates sont chargés
+        if (templates == null) {
+            System.err.println("Templates not loaded. Check initialization.");
+            return "# Templates not loaded";
         }
 
+        // Obtenir le template
+        String templateName = result.getTemplateName();
+        ST template = templates.getInstanceOf(templateName);
+        if (template == null) {
+            System.err.println("Template not found: " + templateName);
+            return "# Template not found: " + templateName;
+        }
+
+        // Ajouter les attributs de manière sécurisée
         for (Map.Entry<String, Object> entry : result.getAttributes().entrySet()) {
-            template.add(entry.getKey(), entry.getValue());
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            
+            try {
+                template.add(key, value);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error adding attribute '" + key + "' to template '" + templateName + "': " + e.getMessage());
+                // Continuer avec les autres attributs plutôt que d'échouer complètement
+            }
         }
 
         return template.render();
@@ -173,10 +285,9 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         } else if (ctx.loopStatement() != null) {
             return (ContextResult) visit(ctx.loopStatement());
         } else if (ctx.returnStatement() != null) {
-            // tu peux gérer plus tard si tu veux générer du code Python avec return
-            return ContextResult.invalid(); // ou visite réelle si tu veux
+            return (ContextResult) visit(ctx.returnStatement());
         } else if (ctx.predefinedStmt() != null) {
-            return (ContextResult) visit(ctx.predefinedStmt()); // à implémenter si nécessaire
+            return (ContextResult) visit(ctx.predefinedStmt());
         }
 
         return ContextResult.invalid();
@@ -327,9 +438,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         // Decrement indent level
         indentLevel--;
 
-        // Put the rendered statements in attributes
-        attributes.put("body", renderedStatements);
-        attributes.put("statements", renderedStatements);
+        // Put the rendered statements in attributes - use consistent naming with templates
+        attributes.put("statements", renderedStatements); // For block template
 
         return ContextResult.valid(attributes, "block");
     }
@@ -380,7 +490,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitLoopStatement(EMJParser.LoopStatementContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
-        List<String> body = new ArrayList<>();
+        List<String> loopBody = new ArrayList<>();
 
         // Vérifier si c'est une boucle while (identifiée par l'emoji ♾️)
         if (ctx.WHILE() != null) {
@@ -388,7 +498,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             ContextResult conditionResult = (ContextResult) visit(ctx.expression());
             String condition = conditionResult.getAttributes().get("code").toString();
 
-            body.add(getIndent() + "while " + condition + ":");
+            loopBody.add(getIndent() + "while " + condition + ":");
 
             incrIndent();
 
@@ -397,7 +507,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
 
             if (blockStatements != null) {
-                body.addAll(blockStatements);
+                loopBody.addAll(blockStatements);
             }
 
             decrIndent();
@@ -409,7 +519,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             String expr = exprResult.getAttributes().get("code").toString();
 
             String counter = "i" + loopCounter++;
-            body.add(getIndent() + "for " + counter + " in range(int(" + expr + ")):");
+            loopBody.add(getIndent() + "for " + counter + " in range(int(" + expr + ")):");
 
             incrIndent();
 
@@ -418,13 +528,14 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
 
             if (blockStatements != null) {
-                body.addAll(blockStatements);
+                loopBody.addAll(blockStatements);
             }
 
             decrIndent();
         }
 
-        attributes.put("body", body);
+        // Ensure attribute name matches template parameter name
+        attributes.put("body", loopBody);
         return ContextResult.valid(attributes, "loopStatement");
     }
 
@@ -691,17 +802,37 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         attributes.put("code", funcName + "(" + args + ")");
         return ContextResult.valid(attributes, "primaryExpression");
     }
-
+    
     @Override
-    public String renderTemplate(ContextResult context) {
-        return "";
+    public ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx) {
+        Map<String, Object> attributes = new HashMap<>();
+        
+        // Générer le code pour l'instruction prédéfinie (comme le stop ✴)
+        StringBuilder code = new StringBuilder();
+        code.append(getIndent()).append("stop()");
+        
+        // Seul l'attribut 'code' est attendu par le template predefinedStmt
+        attributes.put("code", code.toString());
+        
+        return ContextResult.valid(attributes, "predefinedStmt");
     }
-
-
+    
     @Override
-    public void loadTemplates(String template) {
-        this.templates = new STGroupFile(template);
+    public ContextResult visitFunctionCallStmt(EMJParser.FunctionCallStmtContext ctx) {
+        Map<String, Object> attributes = new HashMap<>();
+        
+        // Visite l'appel de fonction et récupère son code
+        ContextResult callResult = (ContextResult) visit(ctx.functionCall());
+        String functionCallCode = callResult.getAttributes().get("code").toString();
+        
+        // Ajoute l'indentation appropriée
+        String statement = getIndent() + functionCallCode;
+        
+        attributes.put("body", Arrays.asList(statement));
+        return ContextResult.valid(attributes, "block");
     }
+    
+    // Cette méthode est déjà définie ailleurs dans la classe
 
     /**
      * Generate indentation for the current level
@@ -715,21 +846,98 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     }
 
     @Override
+    public String renderTemplate(ContextResult context) {
+        return "";
+    }
+    
+    @Override
+    public void loadTemplates(String templateDir) {
+        try {
+            // Essai 1: Chemins relatifs par rapport au classpath
+            this.templates = new STGroupFile(templateDir);
+            if (this.templates == null || !this.templates.isDefined("mainFunction")) {
+                // Essai 2: Avec slash au début pour ressources dans le classpath
+                this.templates = new STGroupFile("/" + templateDir);
+            }
+            
+            // Essai 3: Dossier templates dans les ressources
+            if (this.templates == null || !this.templates.isDefined("mainFunction")) {
+                this.templates = new STGroupFile("/templates/" + templateDir);
+            }
+            
+            // Essai 4: Chemin absolu avec resources
+            if (this.templates == null || !this.templates.isDefined("mainFunction")) {
+                String resourcePath = "src/main/resources/" + templateDir;
+                this.templates = new STGroupFile(resourcePath);
+            }
+            
+            // Si toujours pas de templates valides, c'est une erreur
+            if (this.templates == null || !this.templates.isDefined("mainFunction")) {
+                System.err.println("Templates valides introuvables pour le chemin: " + templateDir);
+                System.err.println("Templates disponibles: " + (this.templates != null ? String.join(", ", this.templates.getTemplateNames()) : "aucun"));
+                throw new IllegalStateException("Impossible de charger le template: " + templateDir);
+            }
+            
+            // Si on arrive ici, c'est que les templates sont chargés avec succès
+            System.out.println("Templates chargés avec succès à partir de: " + templateDir);
+            System.out.println("Templates disponibles: " + String.join(", ", this.templates.getTemplateNames()));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des templates: " + e.getMessage());
+            throw new IllegalStateException("Impossible de charger le template: " + templateDir, e);
+        }
+    }
+
+    @Override
     public String generateCode(ContextResult program) {
         if (!program.isValid()) {
-            return "# Code generation failed";
+            System.err.println("Erreur: Le programme n'est pas valide.");
+            return "# Code generation failed: invalid program";
         }
 
-        ST template = templates.getInstanceOf(program.getTemplateName());
+        String templateName = program.getTemplateName();
+        System.out.println("Génération de code avec le template: " + templateName);
+        
+        // Vérifier que les templates sont chargés
+        if (templates == null) {
+            System.err.println("Erreur: Les templates n'ont pas été chargés.");
+            return "# Code generation failed: templates not loaded";
+        }
+        
+        ST template = templates.getInstanceOf(templateName);
         if (template == null) {
-            return "# Template not found: " + program.getTemplateName();
+            System.err.println("Erreur: Template '" + templateName + "' non trouvé.");
+            System.err.println("Templates disponibles: " + String.join(", ", templates.getTemplateNames()));
+            return "# Template not found: " + templateName;
         }
 
+        // Afficher les attributs pour débogage
+        System.out.println("Attributs du programme:");
         for (Map.Entry<String, Object> entry : program.getAttributes().entrySet()) {
-            template.add(entry.getKey(), entry.getValue());
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            System.out.println("  - " + key + ": " + (value instanceof Collection ? "Collection de taille " + ((Collection<?>) value).size() : value));
+            
+            try {
+                template.add(key, value);
+            } catch (Exception e) {
+                System.err.println("Erreur lors de l'ajout de l'attribut '" + key + "': " + e.getMessage());
+            }
         }
 
-        return template.render();
+        // S'assurer spécifiquement que l'attribut 'body' existe si nécessaire
+        if (templateName.equals("program") && !program.getAttributes().containsKey("body")) {
+            System.err.println("Avertissement: L'attribut 'body' est manquant pour le template 'program'.");
+        }
+
+        try {
+            String renderedCode = template.render();
+            System.out.println("Génération de code réussie!");
+            return renderedCode;
+        } catch (Exception e) {
+            System.err.println("Erreur lors du rendu du template '" + templateName + "': " + e.getMessage());
+            e.printStackTrace();
+            return "# Code generation failed: " + e.getMessage();
+        }
     }
 
     private String getTypeFromContext(EMJParser.TypeContext typeCtx) {
