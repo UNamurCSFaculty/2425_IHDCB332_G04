@@ -441,43 +441,36 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitIfStatement(EMJParser.IfStatementContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
-        List<String> body = new ArrayList<>();
+        attributes.put("indent",getIndent());
+        String emptyBlock = "pass #empty block";
 
-        // Condition
-        ContextResult condResult = (ContextResult) visit(ctx.expression());
-        String condition = condResult.getAttributes().get("code").toString();
+        ContextResult conditionResult = (ContextResult) visit(ctx.expression());
+        attributes.put("condition", renderResult(conditionResult));
 
-        // Ligne if
-        body.add(getIndent() + "if " + condition + ":");
-
-        // Bloc if
         incrIndent();
-        ContextResult ifBlockResult = (ContextResult) visit(ctx.block(0));
-        List<String> ifBodyStatements = (List<String>) ifBlockResult.getAttributes().get("body");
-        if (ifBodyStatements != null) {
-            body.addAll(ifBodyStatements);
+        String renderedIfBlock = String.format("%s%s", getIndent(), emptyBlock);
+        if (!ctx.block().isEmpty()) {
+            if (!ctx.block(0).isEmpty()) {
+                renderedIfBlock = renderResult((ContextResult) visit(ctx.block(0)));
+            }
         }
         decrIndent();
+        attributes.put("bodyIf", renderedIfBlock);
 
         // Bloc else si présent
         if (ctx.block().size() > 1) {
-            body.add(getIndent() + "else:");
             incrIndent();
-            ContextResult elseBlockResult = (ContextResult) visit(ctx.block(1));
-            List<String> elseBodyStatements = (List<String>) elseBlockResult.getAttributes().get("body");
-            if (elseBodyStatements != null) {
-                body.addAll(elseBodyStatements);
+            String renderedElseBlock = String.format("%s%s", getIndent(), emptyBlock);
+            if (!ctx.block().isEmpty() && !ctx.block(0).isEmpty()) {
+                renderedElseBlock = renderResult((ContextResult) visit(ctx.block(0)));
             }
             decrIndent();
-        } else if (ctx.SKIPPING() != null) {
-            // Skip branch (else vide)
-            body.add(getIndent() + "else:");
+            attributes.put("bodyElse", renderedElseBlock);
+        }else if (ctx.SKIPPING()!=null){
             incrIndent();
-            body.add(getIndent() + "pass  # skip");
+            attributes.put("bodyElse", String.format("%spass  # skip", getIndent()));
             decrIndent();
         }
-
-        attributes.put("body", body);
         return ContextResult.valid(attributes, "ifStatement");
     }
 
@@ -494,7 +487,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             attributes.put("condition", renderResult(conditionResult));
 
             incrIndent();
-            String renderedBlock = getIndent() + emptyBlock;
+            String renderedBlock = String.format("%s%s", getIndent(), emptyBlock);
             if (!ctx.block().statement().isEmpty()) {
                 renderedBlock = renderResult((ContextResult) visit(ctx.block()));
             }
@@ -509,7 +502,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             attributes.put("counter", loopCounter++);
 
             incrIndent();
-            String renderedBlock = getIndent() + emptyBlock;
+            String renderedBlock = String.format("%s%s", getIndent(), emptyBlock);
             if (!ctx.block().statement().isEmpty()) {
                 renderedBlock = renderResult((ContextResult) visit(ctx.block()));
             }
@@ -710,7 +703,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
             attributes.put("code", code.toString());
             return ContextResult.valid(attributes, "multiplicativeExpression");
-        } else if (ctx.unaryExpression().size() == 1) {
+        } else if (!ctx.unaryExpression().isEmpty()) {
             return (ContextResult) visit(ctx.unaryExpression(0));
         }
         return null;

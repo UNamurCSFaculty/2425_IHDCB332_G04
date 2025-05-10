@@ -85,8 +85,13 @@ map_data = [
 return(value) ::= "return <value>"
 
 // If Statement
-ifStatement(body) ::= <<
-<body; separator="\n">
+ifStatement(indent,condition,bodyIf,bodyElse) ::= <<
+<indent>if(<condition>):
+<bodyIf>
+<if(bodyElse)>
+<indent>else:
+<bodyElse>
+<endif>
 >>
 
 // Template pour les blocs
