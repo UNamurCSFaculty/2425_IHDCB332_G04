@@ -60,14 +60,14 @@ additiveExpression(code)::= "<code>"
 multiplicativeExpression(code)::= "<code>"
 
 // Template pour unaryExpression
-unaryExpression(code)::= <<<primaryExpression(code)> >>
+unaryExpression(code)::= <<<code> >>
 
 // Template pour primaryExpression
 primaryExpression(code)::= "<code>"
 
 // CARTE
 // Template principal pour un fichier de carte
-map_program(width, height, orientation, map) ::= <<
+mapProgram(width, height, orientation, map) ::= <<
 # Carte générée à partir d'un fichier EMJ (.map)
 
 # Dimensions

@@ -175,7 +175,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 String cleaned = emojiShortNames.getOrDefault(emoji, "unknown");
                 row.append(cleaned);
             }
-            mapLines.add("\"" + row.toString() + "\"");
+            mapLines.add("\"" + row + "\"");
         }
 
         attributes.put("width", width);
@@ -183,7 +183,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         attributes.put("orientation", orientation);
         attributes.put("map", mapLines); // List<String>, dans le template avec wrap="\""
 
-        return ContextResult.valid(attributes, "map_program");
+        return ContextResult.valid(attributes, "mapProgram");
     }
 
     @Override
@@ -461,8 +461,8 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         if (ctx.block().size() > 1) {
             incrIndent();
             String renderedElseBlock = String.format("%s%s", getIndent(), emptyBlock);
-            if (!ctx.block().isEmpty() && !ctx.block(0).isEmpty()) {
-                renderedElseBlock = renderResult((ContextResult) visit(ctx.block(0)));
+            if (!ctx.block().isEmpty() && !ctx.block(1).isEmpty()) {
+                renderedElseBlock = renderResult((ContextResult) visit(ctx.block(1)));
             }
             decrIndent();
             attributes.put("bodyElse", renderedElseBlock);
@@ -531,7 +531,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             attributes.put("code", varName);
         }
 
-        return ContextResult.valid(attributes, "left_expression");
+        return ContextResult.valid(attributes, "leftExpression");
     }
 
 
@@ -611,7 +611,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             ContextResult exprResult = (ContextResult) visit(ctx.comparisonExpression());
             attributes.put("code", "not " + exprResult.getAttributes().get("code"));
 
-            return ContextResult.valid(attributes, "not_expression");
+            return ContextResult.valid(attributes, "notExpression");
         } else if (!ctx.comparisonExpression().isEmpty()) {
             return (ContextResult) visit(ctx.comparisonExpression());
         }
