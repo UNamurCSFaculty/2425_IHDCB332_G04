@@ -54,13 +54,13 @@ assignment(left, right, indent) ::= "<indent><left> = <right>"
 
 // EXPRESSIONS
 // Template pour additiveExpression
-additiveExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
+additiveExpression(code)::= "<code>"
 
 // Template pour multiplicativeExpression
-multiplicativeExpression(left, rights) ::= <<<left> <if(rights)><rights; separator=" "><endif> >>
+multiplicativeExpression(code)::= "<code>"
 
 // Template pour unaryExpression
-unaryExpression(minus, code)::= <<<if(minus)>-<endif><primaryExpression(code)> >>
+unaryExpression(code)::= <<<primaryExpression(code)> >>
 
 // Template pour primaryExpression
 primaryExpression(code)::= "<code>"
@@ -90,13 +90,19 @@ ifStatement(body) ::= <<
 >>
 
 // Template pour les blocs
-block(body) ::= <<
-<body; separator="\n">
+block(statements) ::= <<
+<statements; separator="\n">
 >>
 
 // Template pour les boucles (while et for)
-loopStatement(body) ::= <<
-<body; separator="\n">
+whileStatement(indent,condition,body) ::= <<
+<indent>while(<condition>):
+<body>
+>>
+
+forStatement(indent,counter,range,body) ::= <<
+<indent>for i<counter> in range(<range>):
+<body>
 >>
 
 // Template pour les instructions prédéfinies

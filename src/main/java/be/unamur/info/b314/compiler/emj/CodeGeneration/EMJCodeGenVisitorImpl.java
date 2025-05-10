@@ -420,9 +420,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     public ContextResult visitBlock(EMJParser.BlockContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
 
-        // Increment indent level for statements inside the block
-        indentLevel++;
-
         // Visit all statements and render them
         List<String> renderedStatements = new ArrayList<>();
         for (EMJParser.StatementContext stmtCtx : ctx.statement()) {
@@ -434,9 +431,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
             renderedStatements.add(renderResult(stmtResult));
         }
-
-        // Decrement indent level
-        indentLevel--;
 
         // Put the rendered statements in attributes - use consistent naming with templates
         attributes.put("statements", renderedStatements); // For block template
@@ -490,53 +484,42 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitLoopStatement(EMJParser.LoopStatementContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
-        List<String> loopBody = new ArrayList<>();
+        attributes.put("indent",getIndent());
+        String emptyBlock="pass #empty block";
 
         // Vérifier si c'est une boucle while (identifiée par l'emoji ♾️)
         if (ctx.WHILE() != null) {
             // Condition
             ContextResult conditionResult = (ContextResult) visit(ctx.expression());
-            String condition = conditionResult.getAttributes().get("code").toString();
-
-            loopBody.add(getIndent() + "while " + condition + ":");
+            attributes.put("condition", renderResult(conditionResult));
 
             incrIndent();
-
-            // Corps de la boucle
-            ContextResult blockResult = (ContextResult) visit(ctx.block());
-            List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
-
-            if (blockStatements != null) {
-                loopBody.addAll(blockStatements);
+            String renderedBlock = getIndent() + emptyBlock;
+            if (!ctx.block().statement().isEmpty()) {
+                renderedBlock = renderResult((ContextResult) visit(ctx.block()));
             }
-
             decrIndent();
-        }
-        // Cas pour la boucle for (identifiée par l'emoji 🔁)
-        else if (ctx.FOR() != null) {
+            // Ensure attribute name matches template parameter name
+            attributes.put("body", renderedBlock);
+            return ContextResult.valid(attributes, "whileStatement");
+        } else if (ctx.FOR() != null) {// Cas pour la boucle for (identifiée par l'emoji 🔁)
             // Nombre d'itérations
             ContextResult exprResult = (ContextResult) visit(ctx.expression());
-            String expr = exprResult.getAttributes().get("code").toString();
-
-            String counter = "i" + loopCounter++;
-            loopBody.add(getIndent() + "for " + counter + " in range(int(" + expr + ")):");
+            attributes.put("range", renderResult(exprResult));
+            attributes.put("counter", loopCounter++);
 
             incrIndent();
-
-            // Corps de la boucle
-            ContextResult blockResult = (ContextResult) visit(ctx.block());
-            List<String> blockStatements = (List<String>) blockResult.getAttributes().get("statements");
-
-            if (blockStatements != null) {
-                loopBody.addAll(blockStatements);
+            String renderedBlock = getIndent() + emptyBlock;
+            if (!ctx.block().statement().isEmpty()) {
+                renderedBlock = renderResult((ContextResult) visit(ctx.block()));
             }
-
             decrIndent();
-        }
 
-        // Ensure attribute name matches template parameter name
-        attributes.put("body", loopBody);
-        return ContextResult.valid(attributes, "loopStatement");
+            // Ensure attribute name matches template parameter name
+            attributes.put("body", renderedBlock);
+            return ContextResult.valid(attributes, "forStatement");
+        }
+        return null;
     }
 
     @Override
@@ -596,7 +579,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             }
 
             attributes.put("code", code.toString());
-            return ContextResult.valid(attributes, "primary_expression");
+            return ContextResult.valid(attributes, "primaryExpression");
         } else if (!ctx.andExpression().isEmpty()) {
             return (ContextResult) visit(ctx.andExpression(0));
         }
@@ -620,7 +603,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             }
 
             attributes.put("code", code.toString());
-            return ContextResult.valid(attributes, "primary_expression");
+            return ContextResult.valid(attributes, "primaryExpression");
         } else if (!ctx.notExpression().isEmpty()) {
             return (ContextResult) visit(ctx.notExpression(0));
         }
