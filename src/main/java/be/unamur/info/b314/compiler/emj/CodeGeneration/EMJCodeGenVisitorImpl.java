@@ -5,6 +5,7 @@ import be.unamur.info.b314.compiler.EMJParserBaseVisitor;
 import be.unamur.info.b314.compiler.emj.EMJVarType;
 // Utilisation du chemin complet pour éviter les problèmes de résolution de package
 import be.unamur.info.b314.compiler.emj.Result.ContextResult;
+import com.vdurmont.emoji.EmojiParser;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
@@ -951,7 +952,9 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         if (emojiShortNames.containsKey(normalized)) {
             return emojiShortNames.get(normalized);
         }
-        return "emoji_" + Math.abs(emoji.hashCode());
+        String parsedEmoji = EmojiParser.parseToAliases(emoji);
+        parsedEmoji = parsedEmoji.replaceAll("\\W", "");
+        return "emoji_" + parsedEmoji;
     }
 
     private void incrIndent() {
