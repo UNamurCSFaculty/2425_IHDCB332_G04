@@ -275,28 +275,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         return template.render();
     }
 
-//    @Override
-//    public ContextResult visitStatement(EMJParser.StatementContext ctx) {
-//        if (ctx.varDecl() != null) {
-//            return (ContextResult) visit(ctx.varDecl());
-//        } else if (ctx.assignment() != null) {
-//            return (ContextResult) visit(ctx.assignment());
-//        } else if (ctx.functionCallStmt() != null) {
-//            return (ContextResult) visit(ctx.functionCallStmt());
-//        } else if (ctx.ifStatement() != null) {
-//            return (ContextResult) visit(ctx.ifStatement());
-//        } else if (ctx.loopStatement() != null) {
-//            return (ContextResult) visit(ctx.loopStatement());
-//        } else if (ctx.returnStatement() != null) {
-//            return (ContextResult) visit(ctx.returnStatement());
-//        } else if (ctx.predefinedStmt() != null) {
-//            return (ContextResult) visit(ctx.predefinedStmt());
-//        }
-//
-//
-//        return ContextResult.invalid();
-//    }
-
     @Override
     public ContextResult visitStatement(EMJParser.StatementContext ctx) {
         if (ctx.varDecl() != null) {
@@ -812,79 +790,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         return ContextResult.valid(attributes, "primaryExpression");
     }
 
-//    @Override
-//    public ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx) {
-//        Map<String, Object> attributes = new HashMap<>();
-//        StringBuilder code = new StringBuilder(getIndent());
-//
-//        /* --- appels sans argument ---------------------------------------- */
-//        if (ctx.STOP_THIEF()   != null) {         // ✋()
-//            code.append("stop_thief()");
-//        } else if (ctx.SOUND_TOGGLE() != null) {  // 📻()
-//            code.append("toggle_sound()");
-//        } else if (ctx.LIGHT_TOGGLE() != null) {  // 🚨()
-//            code.append("toggle_light()");
-//
-//            /* --- appels avec un entier --------------------------------------- */
-//        } else {
-//            // Récupère le nombre de pas passé entre parenthèses
-//            String n = ctx.INT_VALUE().getText(); // toujours présent pour les flèches
-//
-//            if (ctx.UP_ARROW()    != null) {      // ⬆️(n)
-//                code.append("move_up(").append(n).append(")");
-//            } else if (ctx.DOWN_ARROW()  != null) { // ⬇️(n)
-//                code.append("move_down(").append(n).append(")");
-//            } else if (ctx.RIGHT_ARROW() != null) { // ➡️(n)
-//                code.append("move_right(").append(n).append(")");
-//            } else if (ctx.LEFT_ARROW()  != null) { // ⬅️(n)
-//                code.append("move_left(").append(n).append(")");
-//            } else {
-//                code.append("# unknown predefined statement");
-//            }
-//        }
-//
-//        attributes.put("code", code.toString());
-//        return ContextResult.valid(attributes, "predefinedStmt");
-//    }
-
-
-//    @Override
-//    public ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx) {
-//        Map<String, Object> attr = new HashMap<>();
-//        String indent = getIndent();
-//        String code = "";
-//
-//        /* --- sans argument ------------------------------------------------ */
-//        if (ctx.STOP_THIEF() != null) {           // ✋()
-//            code = indent + "cuteBot.stopcar()";
-//
-//        } else if (ctx.SOUND_TOGGLE() != null) {  // 📻()
-//            code = indent + "toggle_sound()";     // petite fonction utilitaire (voir §2)
-//
-//        } else if (ctx.LIGHT_TOGGLE() != null) {  // 🚨()
-//            code = indent + "toggle_light()";     // idem
-//
-//            /* --- avec entier --------------------------------------------------- */
-//        } else {
-//            String n = ctx.INT_VALUE().getText();
-//
-//            if (ctx.UP_ARROW() != null) {         // ⬆️(n)
-//                code = indent + "for _ in range(" + n + "): cuteBot.forward()";
-//
-//            } else if (ctx.DOWN_ARROW() != null) { // ⬇️(n)
-//                code = indent + "for _ in range(" + n + "): cuteBot.backforward()";
-//
-//            } else if (ctx.RIGHT_ARROW() != null) { // ➡️(n)
-//                code = indent + "for _ in range(" + n + "): cuteBot.turnright()";
-//
-//            } else if (ctx.LEFT_ARROW() != null) {  // ⬅️(n)
-//                code = indent + "for _ in range(" + n + "): cuteBot.turnleft()";
-//            }
-//        }
-//
-//        attr.put("code", code);
-//        return ContextResult.valid(attr, "predefinedStmt");
-//    }
 
     @Override
     public ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx) {

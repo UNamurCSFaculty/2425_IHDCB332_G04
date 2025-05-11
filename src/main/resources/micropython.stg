@@ -138,9 +138,9 @@ def toggle_light():
     #Bascule les phares avant du CuteBot on/off
     global _light_on
     if _light_on:
-        # 1️⃣ Méthode officielle : snake_case
+        # Méthode officielle : snake_case
         # cuteBot.turn_off_all_headlights()
-        # 2️⃣ Méthode universelle : couleur = noir
+        # Méthode universelle : couleur = noir
         cuteBot.color_light(cuteBot.RGBLights.RGB_L, 0x000000)
         cuteBot.color_light(cuteBot.RGBLights.RGB_R, 0x000000)
     else:
