@@ -104,16 +104,9 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                 System.out.println("Corps du main trouvé avec " + bodyList.size() + " instructions.");
                                                                                                             //attributes.put("body", bodyList);
                 List<String> wrappedMain = new ArrayList<>();
-                wrappedMain.add("def main():");
                 for (Object line : bodyList) {
-                    if (line instanceof String) {                                                           //wrappedMain.add("    " + line); // indentation
-                        String[] lines = ((String) line).split("\n");
-                        for (String l : lines) {
-                            wrappedMain.add("    " + l); // indent chaque sous-ligne proprement
-                        }
-                    }
+                    wrappedMain.add(line.toString());
                 }
-                wrappedMain.add("main()"); // appel final
                 attributes.put("body", wrappedMain);
 
             } else {
@@ -372,6 +365,10 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitReturnStatement(EMJParser.ReturnStatementContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
+
+        if (ctx.getParent() != null && ctx.getParent().getParent() instanceof EMJParser.MainFunctionContext) {
+            return ContextResult.valid(Collections.emptyMap(), "returnStatement");
+        }
 
         // Check if it's a void return
         if (ctx.VOID_TYPE() != null || ctx.RETURN_VOID() != null || ctx.expression() == null) {
