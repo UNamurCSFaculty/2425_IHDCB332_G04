@@ -13,7 +13,14 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
 
+
+
+
+
+
 public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implements EMJCodeGenVisitor {
+
+
     private STGroup templates;
     private Map<String, String> emojiToIdentifier;
     private int indentLevel = 0;
@@ -59,6 +66,9 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         // Ajoute d'autres emojis si nécessaire
     }
 
+
+
+
     @Override
     public ContextResult visitRoot(EMJParser.RootContext ctx) {
         if (ctx.programFile() != null) {
@@ -76,25 +86,38 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
         // Génère les instructions principales (ex-main)
         ContextResult mainResult = (ContextResult) visit(ctx.mainFunction());
-        
+
         if (mainResult == null) {
             System.err.println("Erreur: mainResult est null. Impossible de générer le corps du programme.");
             return ContextResult.invalid();
         }
-        
+
         if (!mainResult.isValid()) {
             System.err.println("Avertissement: mainResult n'est pas valide.");
         }
-        
+
         // Vérification et ajout de l'attribut 'body'
         if (mainResult.getAttributes().containsKey("body")) {
             Object bodyObj = mainResult.getAttributes().get("body");
             if (bodyObj instanceof List) {
                 List<?> bodyList = (List<?>) bodyObj;
                 System.out.println("Corps du main trouvé avec " + bodyList.size() + " instructions.");
-                attributes.put("body", bodyList);
+                                                                                                            //attributes.put("body", bodyList);
+                List<String> wrappedMain = new ArrayList<>();
+                wrappedMain.add("def main():");
+                for (Object line : bodyList) {
+                    if (line instanceof String) {                                                           //wrappedMain.add("    " + line); // indentation
+                        String[] lines = ((String) line).split("\n");
+                        for (String l : lines) {
+                            wrappedMain.add("    " + l); // indent chaque sous-ligne proprement
+                        }
+                    }
+                }
+                wrappedMain.add("main()"); // appel final
+                attributes.put("body", wrappedMain);
+
             } else {
-                System.err.println("Erreur: l'attribut 'body' n'est pas une liste comme attendu. Type: " + 
+                System.err.println("Erreur: l'attribut 'body' n'est pas une liste comme attendu. Type: " +
                                  (bodyObj != null ? bodyObj.getClass().getName() : "null"));
                 // Créer une liste vide plutôt que de générer une erreur
                 attributes.put("body", new ArrayList<String>());
@@ -109,7 +132,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         List<String> renderedFunctions = new ArrayList<>();
         if (ctx.functionDecl() != null && !ctx.functionDecl().isEmpty()) {
             System.out.println("Génération de " + ctx.functionDecl().size() + " fonctions utilisateur.");
-            
+
             for (EMJParser.FunctionDeclContext funcCtx : ctx.functionDecl()) {
                 try {
                     incrIndent();
@@ -117,7 +140,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                     decrIndent();
 
                     if (funcResult == null || !funcResult.isValid()) {
-                        System.err.println("Erreur lors de la génération de la fonction: " + 
+                        System.err.println("Erreur lors de la génération de la fonction: " +
                                          (funcCtx.EMOJI_ID() != null ? funcCtx.EMOJI_ID().getText() : "<sans nom>"));
                         continue;
                     }
@@ -132,14 +155,14 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
                         try {
                             funcTemplate.add(entry.getKey(), entry.getValue());
                         } catch (Exception e) {
-                            System.err.println("Erreur lors de l'ajout de l'attribut '" + 
+                            System.err.println("Erreur lors de l'ajout de l'attribut '" +
                                              entry.getKey() + "' au template de fonction: " + e.getMessage());
                         }
                     }
-                    
+
                     String renderedFunction = funcTemplate.render();
                     renderedFunctions.add(renderedFunction);
-                    System.out.println("Fonction rendue avec succès: " + 
+                    System.out.println("Fonction rendue avec succès: " +
                                      (funcCtx.EMOJI_ID() != null ? funcCtx.EMOJI_ID().getText() : "<sans nom>"));
                 } catch (Exception e) {
                     System.err.println("Exception lors de la génération d'une fonction: " + e.getMessage());
@@ -149,13 +172,14 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         } else {
             System.out.println("Aucune fonction utilisateur à générer.");
         }
-        
+
         attributes.put("functions", renderedFunctions);
-        System.out.println("Génération du programme terminée avec " + renderedFunctions.size() + 
+        System.out.println("Génération du programme terminée avec " + renderedFunctions.size() +
                           " fonctions utilisateur.");
 
         return ContextResult.valid(attributes, "program");
     }
+
 
     @Override
     public ContextResult visitMapFile(EMJParser.MapFileContext ctx) {
@@ -360,6 +384,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
 
         return ContextResult.valid(attributes, "return");
     }
+
 
 
     @Override
