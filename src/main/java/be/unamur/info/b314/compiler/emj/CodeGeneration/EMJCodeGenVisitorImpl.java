@@ -199,32 +199,32 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         int width = Integer.parseInt(ctx.INT_VALUE(0).getText());
         int height = Integer.parseInt(ctx.INT_VALUE(1).getText());
 
-        // Nettoie l'orientation (⬆️ -> up, etc.)
         String orientation = sanitizeEmoji(ctx.orientation().getText());
         logger.info("Map dimensions: " + width + "x" + height + ", orientation: " + orientation);
 
-        // Construction des lignes de la carte
-        List<String> mapLines = new ArrayList<>();
+        List<String> mapRows = new ArrayList<>();
         int index = 0;
         for (int i = 0; i < height; i++) {
-            StringBuilder row = new StringBuilder();
+            List<String> cells = new ArrayList<>();
             for (int j = 0; j < width; j++) {
                 EMJParser.MapCellContext cellCtx = ctx.mapCell(index++);
                 String emoji = cellCtx.getText();
                 String cleaned = emojiShortNames.getOrDefault(emoji, "unknown");
-                row.append(cleaned);
+                cells.add("\"" + cleaned + "\"");
             }
-            mapLines.add("\"" + row + "\"");
+            String row = "[" + String.join(", ", cells) + "]";
+            mapRows.add(row);
         }
 
         attributes.put("width", width);
         attributes.put("height", height);
         attributes.put("orientation", orientation);
-        attributes.put("map", mapLines); // List<String>, dans le template avec wrap="\""
+        attributes.put("map", mapRows);
 
-        logger.info("Map file processed successfully");
+        logger.info("Map file processed successfully (full names)");
         return ContextResult.valid(attributes, "mapProgram");
     }
+
 
     @Override
     public ContextResult visitMainFunction(EMJParser.MainFunctionContext ctx) {
