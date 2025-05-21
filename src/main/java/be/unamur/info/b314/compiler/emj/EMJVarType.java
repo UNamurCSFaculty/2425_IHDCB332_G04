@@ -1,7 +1,7 @@
 package be.unamur.info.b314.compiler.emj;
 
 public enum EMJVarType {
-    TUPLE("TUPLE"), INT("INT"), BOOL("BOOL"), STRING("STRING"), CHAR("CHAR"), UNKNOWN("UNKNOWN"), VOID("VOID");
+    TUPLE("tuple"), INT("int"), BOOL("bool"), STRING("str"), CHAR("char"), UNKNOWN("Unknown"), VOID("Void"); //Pas de char en python
 
     private final String label;
 
@@ -10,6 +10,13 @@ public enum EMJVarType {
     }
 
     public String label() {
+        return label;
+    }
+
+    public String pyLabel() {
+        if (this == EMJVarType.CHAR) {
+            return "str";
+        }
         return label;
     }
 }

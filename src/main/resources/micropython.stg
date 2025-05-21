@@ -1,0 +1,163 @@
+/*
+ * Template group pour la génération de code MicroPython
+ * Utilisé par CodeGenVisitorST pour produire du code MicroPython
+ * à partir de l'AST EMJ
+ */
+
+// Template pour le programme complet
+program(functions, body) ::= <<
+# Code généré à partir d'un programme EMJ
+from microbit import *
+import music
+<helpers()>
+
+<if(functions)>
+# Fonctions utilisateur
+<functions; separator="\n\n">
+<endif>
+<body; separator="\n">
+>>
+
+// Template pour la fonction principale
+mainFunction(body) ::= <<
+<body; separator="\n">
+>>
+
+// Template pour la déclaration de fonctions
+functionDecl(name, parameters, body, return) ::= <<
+def <name>(<parameters; separator=", ">):
+<body; separator="\n">
+<if(return)>
+    return <return>
+<endif>
+>>
+
+// Template pour les paramètres de fonction
+parameter(name)::= "<name>"
+
+// Templates pour les types de données
+mapType ::= [
+  "INT":"int",
+  "BOOL":"bool",
+  "CHAR":"str",
+  "STRING":"str",
+  "TUPLE":"tuple",
+  "VOID":"None",
+  default:"None"
+]
+
+// Templates pour les déclarations de variables
+varDecl(name, type, value, indent) ::= "<indent><name> = <value>"
+
+// Templates pour l'assignation de variable
+assignment(left, right, indent) ::= "<indent><left> = <right>"
+
+// EXPRESSIONS
+// Template pour additiveExpression
+additiveExpression(code)::= "<code>"
+
+// Template pour multiplicativeExpression
+multiplicativeExpression(code)::= "<code>"
+
+// Template pour unaryExpression
+unaryExpression(code)::= <<<code> >>
+
+// Template pour primaryExpression
+primaryExpression(code)::= "<code>"
+
+// CARTE
+// Template principal pour un fichier de carte
+mapProgram(width, height, orientation, map) ::= <<
+# Carte générée à partir d'un fichier EMJ (.map)
+
+# Dimensions
+width = <width>
+height = <height>
+orientation = "<orientation>"
+
+# Carte (chaîne de caractères ligne par ligne)
+map_data = [
+    <map; separator=",\n">
+]
+>>
+
+// Return statement
+return(value) ::= "return <value>"
+
+// If Statement
+ifStatement(indent,condition,bodyIf,bodyElse) ::= <<
+<indent>if(<condition>):
+<bodyIf>
+<if(bodyElse)>
+<indent>else:
+<bodyElse>
+<endif>
+>>
+
+// Template pour les blocs
+block(statements) ::= <<
+<statements; separator="\n">
+>>
+
+// Template pour les boucles (while et for)
+whileStatement(indent,condition,body) ::= <<
+<indent>while(<condition>):
+<body>
+>>
+
+forStatement(indent,counter,range,body) ::= <<
+<indent>for i<counter> in range(<range>):
+<body>
+>>
+
+// Template pour les instructions prédéfinies
+predefinedStmt(code) ::= "<code>"
+
+//Pour prendre en compte les void en fin de .moj
+skipStatement(indent) ::= "<indent>pass  # skip"
+
+
+helpers() ::= <<
+
+#Helpers
+_sound_on  = False
+_light_on  = False
+
+def toggle_sound():
+#Bascule sirène on/off
+    global _sound_on
+    if _sound_on:
+        music.stop_all_sounds()
+    else:
+        music.ring_tone(523)      # DO5
+    _sound_on = not _sound_on
+
+
+
+def toggle_light():
+    #Bascule les phares avant du CuteBot on/off
+    global _light_on
+    if _light_on:
+        # Méthode officielle : snake_case
+        # cuteBot.turn_off_all_headlights()
+        # Méthode universelle : couleur = noir
+        cuteBot.color_light(cuteBot.RGBLights.RGB_L, 0x000000)
+        cuteBot.color_light(cuteBot.RGBLights.RGB_R, 0x000000)
+    else:
+        cuteBot.color_light(cuteBot.RGBLights.RGB_L, 0xff0000)
+        cuteBot.color_light(cuteBot.RGBLights.RGB_R, 0xff0000)
+    _light_on = not _light_on
+
+#mouvements chronométrés
+def move_up(t):
+    cuteBot.move_time(cuteBot.Direction.FORWARD, 100, t * 1000)
+
+def move_down(t):
+    cuteBot.move_time(cuteBot.Direction.BACKWARD, 100, t * 1000)
+
+def turn_left(t):
+    cuteBot.move_time(cuteBot.Direction.LEFT, 100, t * 1000)
+
+def turn_right(t):
+    cuteBot.move_time(cuteBot.Direction.RIGHT, 100, t * 1000)
+>>

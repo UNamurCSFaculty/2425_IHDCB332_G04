@@ -1,0 +1,14 @@
+🌀 🏠(){                📢 fonction main, type void
+    📢 Appels sans argument
+    ✋();               📢 stop_thief
+    📻();               📢 toggle_sound
+    🚨();               📢 toggle_light
+
+    📢 Appels avec un entier
+    ⬆️(3);              📢 move_up(3)
+    ⬇️(2);              📢 move_down(2)
+    ➡️(4);              📢 move_right(4)
+    ⬅️(1);              📢 move_left(1)
+
+    🌀;                 📢 return void
+}

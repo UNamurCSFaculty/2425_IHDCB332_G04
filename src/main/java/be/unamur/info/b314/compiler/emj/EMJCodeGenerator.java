@@ -2,6 +2,8 @@ package be.unamur.info.b314.compiler.emj;
 
 import be.unamur.info.b314.compiler.EMJParser;
 import be.unamur.info.b314.compiler.EMJParserBaseVisitor;
+import org.antlr.v4.runtime.tree.ParseTree;
+
 
 
  //Code generator for EMJ language targeting MicroPython.
@@ -49,15 +51,22 @@ public class EMJCodeGenerator extends EMJParserBaseVisitor<String> {
         output.append("def main():\n");
         indentation = "    ";
 
-        for (EMJParser.StatementContext st : ctx.statement()) {
-            String line = visit(st);        // délègue au visiteur approprié
-            if (line != null && !line.trim().isEmpty()) {
-                output.append(indentation).append(line).append("\n");
+        // Accès à tous les enfants et filtrer les 'statement'
+        for (ParseTree child : ctx.children) {
+            if (child instanceof EMJParser.StatementContext) {
+                EMJParser.StatementContext st = (EMJParser.StatementContext) child;
+                String line = visit(st);
+                if (line != null && !line.trim().isEmpty()) {
+                    output.append(indentation).append(line).append("\n");
+                }
             }
+
         }
+
         output.append("\nmain()\n");
         return null;
     }
+
 
 
      // Visiteurs ‘statement’ et expressions

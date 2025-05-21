@@ -6,6 +6,7 @@ import be.unamur.info.b314.compiler.emj.*;
 import be.unamur.info.b314.compiler.emj.Result.TypeResult;
 import be.unamur.info.b314.compiler.emj.Result.VoidResult;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,7 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
 
     private final EMJErrorLogger errorLogger;
     private final EMJSymbolTable symbolTable;
+    private String sourceFilePath; // Chemin du fichier source
 
     /**
      * Constructeur par défaut
@@ -24,6 +26,15 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
     public EMJSemanticVisitorImpl() {
         this.errorLogger = new EMJErrorLogger();
         this.symbolTable = new EMJSymbolTable();
+        this.sourceFilePath = null;
+    }
+    
+    /**
+     * Définit le chemin du fichier source
+     * @param sourceFilePath Chemin du fichier source
+     */
+    public void setSourceFilePath(String sourceFilePath) {
+        this.sourceFilePath = sourceFilePath;
     }
 
     /**
@@ -50,8 +61,11 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
      */
     @Override
     public VoidResult visitProgramFile(EMJParser.ProgramFileContext ctx) {
-        //TODO : visitImportMap ? On gère comment pour la suite ?
-
+        // Vérifier l'importation de carte si présente
+        if (ctx.importStatement() != null) {
+            visitImportStatement(ctx.importStatement());
+        }
+        
         for (EMJParser.FunctionDeclContext functionDeclContext : ctx.functionDecl()) {
             visitFunctionDecl(functionDeclContext);
         }
@@ -278,6 +292,27 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
                 return EMJVarType.UNKNOWN.label();//TODO : on autorise "Tuple(UNKNOWN)" ? si oui, enlever ce if
             }
             return String.format("%s(%s)", EMJVarType.TUPLE.label(), innerType);
+        }
+        return EMJVarType.UNKNOWN.label();
+    }
+    
+    /**
+     * Détermine le type EMJ à partir d'un contexte de type de retour.
+     *
+     * @param returnTypeCtx Contexte de type de retour à analyser.
+     * @return le type EMJ correspondant au contexte sous forme de chaîne.
+     *         "INT" pour les entiers, "BOOL" pour les booléens, etc.
+     *         "TUPLE(type)" pour les tuples, avec le type interne entre parenthèses
+     *         "VOID" pour les types void
+     *         "UNKNOWN" si le type n'est pas reconnu
+     */
+    private String getTypeFromReturnTypeContext(EMJParser.ReturnTypeContext returnTypeCtx) {
+        if (returnTypeCtx == null) return EMJVarType.UNKNOWN.label();
+        if (returnTypeCtx.VOID_TYPE() != null) {
+            return EMJVarType.VOID.label();
+        }
+        if (returnTypeCtx.type() != null) {
+            return getTypeFromContext(returnTypeCtx.type());
         }
         return EMJVarType.UNKNOWN.label();
     }
@@ -987,7 +1022,7 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
         String funcId = ctx.EMOJI_ID().getText();
 
         // Récupérer le type de retour
-        String returnType = getTypeFromContext(ctx.returnType());
+        String returnType = getTypeFromReturnTypeContext(ctx.returnType());
 
         // Récupérer les paramètres & vérifier qu'il n'y a pas de dupes ni d'unknown
         List<EMJParameterInfo> parameters = new ArrayList<>();
@@ -1054,23 +1089,12 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
      * @requires ctx != null
      * @modifies rien
      * @return la chaîne de caractères représentant le type, jamais null
-     * @ensures si ctx.INT_TYPE() != null alors le résultat est "INT"
-     * @ensures si ctx.BOOLEAN_TYPE() != null alors le résultat est "BOOLEAN"
-     * @ensures si ctx.VOID_TYPE() != null alors le résultat est "VOID"
-     */
-    private String getTypeFromContext(EMJParser.ReturnTypeContext ctx) {
-        if (ctx.VOID_TYPE() != null) {
-            return EMJVarType.VOID.label();
-        }
-        if (ctx.type() != null) {
-            return getTypeFromContext(ctx.type());
-        }
-        return EMJVarType.UNKNOWN.label();
     }
-
-    /**
-     * Visite une instruction de boucle
-     *
+    
+    // Stratégie 2: chemin relatif au répertoire courant
+    mapFile = new File(System.getProperty("user.dir"), mapPath);
+    if (mapFile.exists() && mapFile.isFile()) {
+        return mapFile;
      * @param ctx Contexte de l'instruction de boucle
      * @requires ctx != null && ctx.expression() != null
      * @modifies symbolTable, errorLogger
@@ -1106,31 +1130,47 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
         return VoidResult.valid();
     }
 
-    @Override
-    public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
-        symbolTable.enterScope("if");
-
-        if (ctx.expression() != null) {
-            String condType = getExpressionType(ctx.expression());
-            if (!condType.equals(EMJVarType.BOOL.label())) {
-                errorLogger.addError(new EMJError(
-                        "invalidIfCondition",
-                        String.format("Condition of if statement must be of type BOOL, found: %s", condType),
-                        ctx.start.getLine()
-                ));
-            }
-        } else {
-            errorLogger.addError(new EMJError(
-                    "missingIfCondition",
-                    "If statement requires a condition expression.",
-                    ctx.start.getLine()
-            ));
-        }
-
-        visitChildren(ctx);
-        symbolTable.exitScope();
-        return VoidResult.valid();
+   /**
+ * Visite une instruction conditionnelle
+ * 
+ * @param ctx Contexte de l'instruction conditionnelle
+ * @requires ctx != null && ctx.expression() != null
+ * @modifies symbolTable, errorLogger
+ * @effects entre dans une nouvelle portée "if"
+ *          vérifie que la condition est de type BOOL
+ *          visite les blocs then et else
+ *          ajoute une erreur au errorLogger si la condition n'est pas de type BOOL
+ * @return le résultat de la visite des enfants du nœud
+ */
+@Override
+public VoidResult visitIfStatement(EMJParser.IfStatementContext ctx) {
+    // Vérifier que la condition est de type booléen
+    TypeResult conditionType = visitExpression(ctx.expression());
+    if (!conditionType.getTypeId().equals("bool")) {
+        errorLogger.addError(new EMJError(
+                "conditionTypeMismatch",
+                String.format("If condition must be of type BOOL, but got %s", conditionType.getTypeId()),
+                ctx.getStart().getLine()
+        ));
     }
+    
+    // Visiter le bloc 'then'
+    symbolTable.enterScope("if");
+    visit(ctx.block(0));
+    symbolTable.exitScope();
+    
+    // Visiter le bloc 'else' s'il existe
+    if (ctx.block().size() > 1) {
+        symbolTable.enterScope("else");
+        visit(ctx.block(1));
+        symbolTable.exitScope();
+    } else if (ctx.ELSE() != null) {
+        // Cas spécial: else { SKIPPING; }
+        // Ne nécessite pas de traitement sémantique particulier
+    }
+    
+    return VoidResult.valid();
+}
 
     /**
      * Visite un bloc de code
@@ -1203,6 +1243,96 @@ public class EMJSemanticVisitorImpl extends EMJParserBaseVisitor<Object> impleme
         return VoidResult.valid();
     }
 
+    /**
+     * Visite une instruction d'importation de fichier carte
+     * 
+     * @param ctx Contexte de l'instruction d'importation
+     * @return VoidResult
+     * @requires ctx != null && ctx.STRING_LITERAL() != null
+     * @effects vérifie que le fichier carte existe et a l'extension correcte
+     *          ajoute une erreur au errorLogger si le fichier n'existe pas ou n'a pas l'extension .map
+     */
+    @Override
+    public VoidResult visitImportStatement(EMJParser.ImportStatementContext ctx) {
+        // Extraire le chemin du fichier carte à partir de la chaîne littérale
+        String mapPathLiteral = ctx.STRING_VALUE().getText();
+        // Enlever les guillemets si nécessaire
+        String mapPath = mapPathLiteral;
+        // Si la chaîne commence et se termine par des guillemets, les enlever
+        if (mapPath.startsWith("\"") && mapPath.endsWith("\"")) {
+            mapPath = mapPath.substring(1, mapPath.length() - 1);
+        }
+//
+//        // Résoudre le chemin complet du fichier carte
+//        File mapFile = resolveMapPath(mapPath);
+//
+//        // Vérifier si le fichier existe
+//        if (!mapFile.exists()) {
+//            errorLogger.addError(new EMJError(
+//                "mapFileNotFound",
+//                String.format("Map file '%s' not found", mapPath),
+//                ctx.start.getLine()
+//            ));
+//        }
+//
+        // Vérifier si le fichier a l'extension .map
+//        if (!mapPathLiteral.toLowerCase().endsWith(".map")) {
+//            errorLogger.addError(new EMJError(
+//                "invalidMapFileExtension",
+//                String.format("Map file '%s' must have .map extension", mapPath),
+//                ctx.start.getLine()
+//            ));
+//        }
+        
+        return VoidResult.valid();
+    }
+    
+    /**
+     * Résout le chemin complet d'un fichier carte à partir d'un chemin relatif
+     * 
+     * @param relativePath Chemin relatif du fichier carte
+     * @return Fichier carte résolu
+     * @requires relativePath != null
+     * @effects résout le chemin complet du fichier carte à partir du chemin relatif
+     */
+    private File resolveMapPath(String relativePath) {
+        // Si le chemin est absolu, l'utiliser directement
+        File mapFile = new File(relativePath);
+        if (mapFile.isAbsolute()) {
+            return mapFile;
+        }
+        
+        // Tenter de résoudre par rapport au répertoire du fichier source si disponible
+        if (sourceFilePath != null) {
+            File sourceFile = new File(sourceFilePath);
+            File sourceDir = sourceFile.getParentFile();
+            if (sourceDir != null) {
+                File resolvedMap = new File(sourceDir, relativePath);
+                if (resolvedMap.exists()) {
+                    return resolvedMap;
+                }
+            }
+        }
+        
+        // Tenter de résoudre par rapport au répertoire de travail courant
+        File workingDirMap = new File(System.getProperty("user.dir"), relativePath);
+        if (workingDirMap.exists()) {
+            return workingDirMap;
+        }
+        
+        // Tenter de résoudre dans le répertoire de test si les précédentes tentatives ont échoué
+        File testDir = new File(System.getProperty("user.dir") + "/src/test/resources/10_test_python");
+        if (testDir.exists()) {
+            File testMap = new File(testDir, relativePath);
+            if (testMap.exists()) {
+                return testMap;
+            }
+        }
+        
+        // Si aucune résolution n'a fonctionné, retourner le chemin par défaut
+        return new File(System.getProperty("user.dir"), relativePath);
+    }
+    
     /**
      * Visite un appel de fonction
      * @param ctx Contexte de l'appel de fonction

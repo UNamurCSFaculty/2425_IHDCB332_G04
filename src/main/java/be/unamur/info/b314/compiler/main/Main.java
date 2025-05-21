@@ -8,8 +8,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.io.*;
 
 import be.unamur.info.b314.compiler.emj.Adapter.EMJVisitorAdapter;
-import be.unamur.info.b314.compiler.emj.EMJCodeGenerator;
+import be.unamur.info.b314.compiler.emj.CodeGeneration.EMJCodeGenVisitorImpl;
 import be.unamur.info.b314.compiler.emj.EMJErrorLogger;
+import be.unamur.info.b314.compiler.emj.Result.ContextResult;
 import be.unamur.info.b314.compiler.emj.Semantic.EMJSemanticVisitorImpl;
 import be.unamur.info.b314.compiler.exception.EMJErrorException;
 import org.antlr.v4.runtime.CharStreams;
@@ -24,10 +25,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
 
 
 @SuppressWarnings("deprecation")
@@ -38,6 +35,9 @@ public class Main {
     private static final String HELP = "h";
     private static final String INPUT = "i";
     private static final String OUTPUT = "o";
+
+    private EMJParser.RootContext rootTree;
+
 
     /**
      * Main method launched when starting compiler jar file.
@@ -163,95 +163,62 @@ public class Main {
      * Compiler methods, this is where the magic happens
      */
     private void compile() throws IOException, EMJErrorException {
-        try {
-            // Get abstract syntax tree
-            LOG.debug("Parsing input");
-
-            // Create ANTLR lexer and parser, based on .g4 grammar
-            EMJLexer lexer = new EMJLexer(CharStreams.fromPath(inputFile.getAbsoluteFile().toPath()));
-            EMJParser.RootContext tree;
-
-            try {
-                EMJParser parser = new EMJParser(new CommonTokenStream(lexer));
-                // Set error listener to implementation
-                parser.removeErrorListeners();
-                MyConsoleErrorListener errorListener = new MyConsoleErrorListener();
-                parser.addErrorListener(errorListener);
-
-                try {
-                    tree = parser.root();
-                }
-
-                catch (RecognitionException e) {
-                    throw new IllegalArgumentException("Error while retrieving parsing tree!", e);
-                }
-
-                if (errorListener.errorHasBeenReported()) {
-                    throw new IllegalArgumentException("Error while parsing input!");
-                }
-            }
-
-            catch(Exception e) {
-                LOG.error("error while parsing");
-                throw new IllegalArgumentException("Error while parsing", e);
-            }
-
-            LOG.debug("Parsing input: done");
-            LOG.debug("AST is {}", tree.toStringTree(parser));
-
-            // LEAVE FOLLOWING LINE COMMENTED UNTIL VISITOR IS IMPLEMENTED
-            this.visitTree(tree);
-        }
-
-        catch(Exception e) {
-            throw e;
-        }
+        this.parseInput();           //Appelle unique au parser ici
+        this.visitTree(rootTree);   //Utilise le root déjà parsé
     }
 
-    private void generateMicroPython(CommandLine line) throws IOException {
 
-        LOG.info("GENERATE MICRO PYTHON CODE:");
-
-       //Analyse syntaxique
-        EMJParser.RootContext pythonTree;
+    //Pour ne pas Parser 2x (une fois dans compile et une fois dans generateMicroPython
+    private void parseInput() throws IOException {
+        LOG.debug("Parsing input");
         try {
-            EMJLexer lexer   = new EMJLexer(CharStreams.fromPath(inputFile.toPath()));
+            EMJLexer lexer = new EMJLexer(CharStreams.fromPath(inputFile.toPath()));
             EMJParser parser = new EMJParser(new CommonTokenStream(lexer));
 
             parser.removeErrorListeners();
             MyConsoleErrorListener errListener = new MyConsoleErrorListener();
             parser.addErrorListener(errListener);
 
-            pythonTree = parser.root();                      // on parse
+            rootTree = parser.root();
 
             if (errListener.errorHasBeenReported()) {
                 throw new IllegalArgumentException("Error while parsing input!");
             }
+
+            LOG.debug("Parsing input: done");
+            LOG.debug("AST is {}", rootTree.toStringTree(parser));
         } catch (Exception e) {
             LOG.error("Error while parsing", e);
             throw new IOException("Parsing failed", e);
         }
+    }
 
-        // Génération MicroPython
-        EMJCodeGenerator generator = new EMJCodeGenerator();
-        String pythonCode = generator.generate(pythonTree);  // <= la méthode prévue
+    private void generateMicroPython(CommandLine line) throws IOException {
+        LOG.info("GENERATE MICRO PYTHON CODE:");
 
-        //Écriture du .py
-        if (line.hasOption(OUTPUT)) {
-            Path out = Paths.get(line.getOptionValue(OUTPUT));
-            Files.write(out, pythonCode.getBytes(StandardCharsets.UTF_8));
-            LOG.info("Python code written to {}", out.toAbsolutePath());
-        } else {
-            // aucun -o : on affiche simplement sur la sortie standard
-            System.out.println(pythonCode);
+        //Utilise rootTree déjà généré
+        EMJCodeGenVisitorImpl codeGenVisitor = new EMJCodeGenVisitorImpl();
+        codeGenVisitor.loadTemplates("micropython.stg");
+
+        ContextResult programResult = (ContextResult) codeGenVisitor.visit(rootTree);
+
+        String generatedCode = codeGenVisitor.generateCode(programResult);
+
+        try (PrintWriter out = new PrintWriter(outputFile)) {
+            out.println(generatedCode);
         }
+
+        System.out.printf("Code généré :\n```python\n%s\n```%n", generatedCode);
     }
 
 
     private void visitTree(EMJParser.RootContext tree) throws EMJErrorException {
-        // Visit tree
-        EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
-        EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
+    // Visit tree
+    EMJSemanticVisitorImpl visitor = new EMJSemanticVisitorImpl();
+    
+    // Passer le chemin du fichier source au visiteur pour la résolution des chemins relatifs
+
+    EMJVisitorAdapter<Object> adapter = new EMJVisitorAdapter<>(visitor);
         LOG.debug("Visiting");
         adapter.visit(tree);
         LOG.debug("Visiting: done");
