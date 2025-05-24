@@ -22,7 +22,6 @@ public interface EMJCodeGenVisitor {
     ContextResult visitAssignment(EMJParser.AssignmentContext ctx);
     ContextResult visitPredefinedStmt(EMJParser.PredefinedStmtContext ctx);
     ContextResult visitReturnStatement(EMJParser.ReturnStatementContext ctx);
-    ContextResult visitFunctionCallStmt(EMJParser.FunctionCallStmtContext ctx);
 
     // Expressions
     ContextResult visitExpression(EMJParser.ExpressionContext ctx);

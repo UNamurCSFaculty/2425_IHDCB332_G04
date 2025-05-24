@@ -132,8 +132,6 @@ def toggle_sound():
         music.ring_tone(523)      # DO5
     _sound_on = not _sound_on
 
-
-
 def toggle_light():
     #Bascule les phares avant du CuteBot on/off
     global _light_on

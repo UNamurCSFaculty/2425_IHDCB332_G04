@@ -9,7 +9,6 @@ import com.vdurmont.emoji.EmojiParser;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
-import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
 import java.util.logging.FileHandler;
@@ -21,7 +20,6 @@ import java.io.IOException;
 public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implements EMJCodeGenVisitor {
 
     private STGroup templates;
-    private Map<String, String> emojiToIdentifier;
     private int indentLevel = 0;
     private int loopCounter = 0;
 
@@ -324,8 +322,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             return (ContextResult) visit(ctx.ifStatement());
         } else if (ctx.loopStatement() != null) {
             return (ContextResult) visit(ctx.loopStatement());
-        } else if (ctx.returnStatement() != null) {
-            return (ContextResult) visit(ctx.returnStatement());
         } else if (ctx.predefinedStmt() != null) {
             return (ContextResult) visit(ctx.predefinedStmt());
         } else if (ctx.getChildCount() == 2                     //  🌀  ;
@@ -881,6 +877,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
     @Override
     public ContextResult visitFunctionCall(EMJParser.FunctionCallContext ctx) {
         Map<String, Object> attributes = new HashMap<>();
+        String indent = getIndent();
 
         // Function name
         String funcName = sanitizeEmoji(ctx.EMOJI_ID().getText());
@@ -898,7 +895,7 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
             }
         }
 
-        String functionCall = funcName + "(" + args + ")";
+        String functionCall = String.format("%s%s(%s)", indent, funcName, args);
         logger.info("Processing function call: " + functionCall);
         attributes.put("code", functionCall);
         return ContextResult.valid(attributes, "primaryExpression");
@@ -939,22 +936,6 @@ public class EMJCodeGenVisitorImpl extends EMJParserBaseVisitor<Object> implemen
         attributes.put("code", code);
 
         return ContextResult.valid(attributes, "predefinedStmt");
-    }
-
-    @Override
-    public ContextResult visitFunctionCallStmt(EMJParser.FunctionCallStmtContext ctx) {
-        Map<String, Object> attributes = new HashMap<>();
-
-        // Visite l'appel de fonction et récupère son code
-        ContextResult callResult = (ContextResult) visit(ctx.functionCall());
-        String functionCallCode = callResult.getAttributes().get("code").toString();
-
-        // Ajoute l'indentation appropriée
-        String statement = getIndent() + functionCallCode;
-        logger.info("Processing function call statement: " + functionCallCode);
-
-        attributes.put("body", Arrays.asList(statement));
-        return ContextResult.valid(attributes, "block");
     }
 
     /**
